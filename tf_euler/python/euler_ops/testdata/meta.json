@@ -1,0 +1,10 @@
+{
+  "node_type_num":2,
+  "edge_type_num":2,
+  "node_uint64_feature_num":2,
+  "node_float_feature_num":2,
+  "node_binary_feature_num":2,
+  "edge_uint64_feature_num":2,
+  "edge_float_feature_num":2,
+  "edge_binary_feature_num":2
+}

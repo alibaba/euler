@@ -1,0 +1,145 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "com.alimama.euler.proto";
+option java_outer_classname = "GraphServiceProto";
+option objc_class_prefix = "GraphService";
+
+package euler.proto;
+
+// The graph service definition.
+service GraphService {
+  // Sends a greeting
+  rpc SampleNode (SampleNodeRequest) returns (SampleNodeReply) {}
+  rpc SampleEdge (SampleEdgeRequest) returns (SampleEdgeReply) {}
+  rpc GetNodeType (GetNodeTypeRequest) returns (GetTypeReply) {}
+  rpc GetNodeFloat32Feature (GetNodeFloat32FeatureRequest) returns (GetFloat32FeatureReply) {}
+  rpc GetNodeUInt64Feature (GetNodeUInt64FeatureRequest) returns (GetUInt64FeatureReply) {}
+  rpc GetNodeBinaryFeature (GetNodeBinaryFeatureRequest) returns (GetBinaryFeatureReply) {}
+  rpc GetEdgeFloat32Feature (GetEdgeFloat32FeatureRequest) returns (GetFloat32FeatureReply) {}
+  rpc GetEdgeUInt64Feature (GetEdgeUInt64FeatureRequest) returns (GetUInt64FeatureReply) {}
+  rpc GetEdgeBinaryFeature (GetEdgeBinaryFeatureRequest) returns (GetBinaryFeatureReply) {}
+  rpc GetFullNeighbor (GetFullNeighborRequest) returns (GetNeighborReply) {}
+  rpc GetSortedNeighbor (GetSortedNeighborRequest) returns (GetNeighborReply) {}
+  rpc GetTopKNeighbor (GetTopKNeighborRequest) returns (GetNeighborReply) {}
+  rpc SampleNeighbor (SampleNeighborRequest) returns (GetNeighborReply) {}
+}
+
+// SampleNode
+message SampleNodeRequest {
+  uint32 node_type = 1;
+  uint32 count = 2;
+}
+
+message SampleNodeReply {
+  repeated uint64 node_ids = 1;
+}
+
+// SampleEdge
+message EdgeID {
+  uint64 src_node = 1;
+  uint64 dst_node = 2;
+  int32 type = 3;
+}
+
+message SampleEdgeRequest {
+  uint32 edge_type = 1;
+  uint32 count = 2;
+}
+
+message SampleEdgeReply {
+  repeated EdgeID edge_ids = 1;
+}
+
+// GetNodeType
+message GetNodeTypeRequest {
+  repeated uint64 node_ids = 1;
+}
+
+message GetTypeReply {
+  repeated int32 types = 1;
+}
+
+// GetNodeFloat32Feature
+message GetNodeFloat32FeatureRequest {
+  repeated uint64 node_ids = 1;
+  repeated uint32 feature_ids = 2;
+}
+
+message GetFloat32FeatureReply {
+  repeated uint32 value_nums = 1;
+  repeated float values = 2;
+}
+
+// GetNodeUInt64Feature
+message GetNodeUInt64FeatureRequest {
+  repeated uint64 node_ids = 1;
+  repeated uint32 feature_ids = 2;
+}
+
+message GetUInt64FeatureReply {
+  repeated uint32 value_nums = 1;
+  repeated uint64 values = 2;
+}
+
+// GetNodeBinaryFeature
+message GetNodeBinaryFeatureRequest {
+  repeated uint64 node_ids = 1;
+  repeated uint32 feature_ids = 2;
+}
+
+message GetBinaryFeatureReply {
+  repeated uint32 value_nums = 1;
+  string values = 2;
+}
+
+// GetEdgeBinaryFeature
+message GetEdgeBinaryFeatureRequest {
+  repeated EdgeID edge_ids = 1;
+  repeated uint32 feature_ids = 2;
+}
+
+// GetEdgeUIntFeature
+message GetEdgeUInt64FeatureRequest {
+  repeated EdgeID edge_ids = 1;
+  repeated uint32 feature_ids = 2;
+}
+
+// GetEdgeFloat32Feature
+message GetEdgeFloat32FeatureRequest {
+  repeated EdgeID edge_ids = 1;
+  repeated uint32 feature_ids = 2;
+}
+
+message GetNeighborReply {
+  repeated uint32 neighbor_nums = 1;
+  repeated uint64 node_ids = 2;
+  repeated float weights = 3;
+  repeated int32 types = 4;
+}
+
+// GetFullNeighbor
+message GetFullNeighborRequest {
+  repeated uint64 node_ids = 1;
+  repeated uint32 edge_types = 2;
+}
+
+// GetSortedNeighbor
+message GetSortedNeighborRequest {
+  repeated uint64 node_ids = 1;
+  repeated uint32 edge_types = 2;
+}
+
+// GetTopKNeighbor
+message GetTopKNeighborRequest {
+  repeated uint64 node_ids = 1;
+  repeated uint32 edge_types = 2;
+  uint32 k = 3;
+}
+
+// SampleNeighbor
+message SampleNeighborRequest {
+  repeated uint64 node_ids = 1;
+  repeated uint32 edge_types = 2;
+  uint32 count = 3;
+}
