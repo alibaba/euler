@@ -21,7 +21,6 @@ Euler中已经实现了一些图学习算法，这些算法的详情请见[论�
   - [Euler C++ API](https://github.com/alibaba/euler/wiki/CPP接口)
 - 基准测试
   - [效果测试](https://github.com/alibaba/euler/wiki/效果测试)
-  - [性能测试](https://github.com/alibaba/euler/wiki/性能测试)
   - [ScalableGCN](https://github.com/alibaba/euler/wiki/ScalableGCN)
 
 # 联系我们
