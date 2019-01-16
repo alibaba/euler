@@ -1,7 +1,9 @@
 # 概述
 图是表达能力很强的通用数据结构，可以用来刻画现实世界中的很多问题。图神经网络等基于图的学习方法在很多领域取得了非常好的效果。
 
-Euler是大规模分布式的图学习框架，配合TensorFlow或者阿里内部的XDL等深度学习工具，它支持用户在数十亿点数百亿边的复杂异构图上进行模型训练。有关Euler系统的详细介绍请参见[系统介绍](https://github.com/alibaba/euler/wiki/系统介绍)。
+Euler是大规模分布式的图学习框架，配合TensorFlow或者阿里开源的XDL等深度学习工具，它支持用户在数十亿点数百亿边的复杂异构图上进行模型训练。有关Euler系统的详细介绍请参见[系统介绍](https://github.com/alibaba/euler/wiki/系统介绍)。
+
+Euler中已经实现了近10中图学习算法，这些算法的详情请见[论文列表](https://github.com/alibaba/euler/wiki/论文列表)。
 
 # 使用文档
 
