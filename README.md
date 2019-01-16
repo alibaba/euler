@@ -25,7 +25,7 @@ Euler中已经实现了一些图学习算法，这些算法的详情请见[论�
   - [ScalableGCN](https://github.com/alibaba/euler/wiki/ScalableGCN)
 
 # 联系我们
-如果有任何问题，请直接提交issues，也欢迎通过Euler开源技术支持邮件组（[euler-opensource@list.alibaba-inc.com](mailto:euler-opensource@list.alibaba-inc.com)）联系我们。
+如果有任何问题，请直接提交[issues](https://github.com/alibaba/euler/issues)，也欢迎通过Euler开源技术支持邮件组（[euler-opensource@list.alibaba-inc.com](mailto:euler-opensource@list.alibaba-inc.com)）联系我们。
 
 # License
 
