@@ -3,9 +3,13 @@
 
 Euler是大规模分布式的图学习框架，配合TensorFlow或者阿里开源的XDL等深度学习工具，它支持用户在数十亿点数百亿边的复杂异构图上进行模型训练。有关Euler系统的详细介绍请参见[系统介绍](https://github.com/alibaba/euler/wiki/系统介绍)。
 
-Euler中已经实现了一些图学习算法，这些算法的详情请见[论文列表](https://github.com/alibaba/euler/wiki/论文列表)。
-
 # 使用文档
+
+在基础教程中，我们着重介绍如何利用Euler快速上手。进阶应用中进一步介绍了如何编写一个定制化的模型以及分布式训练的知识。
+
+然后，我们介绍了Euler的编程接口：已有算法的高层使用接口，基于Tensorflow定义的中间层图操作算子，以及最底层的Euler C++ API(适合想适配其它深度学习框架的用户)。
+
+在算法介绍章节，我们给出内部算法的介绍以及其它公开算法的论文链接。我们内部算法投稿结束后会给出更详细的论文文献。
 
 - 基础教程
   - [编译安装](https://github.com/alibaba/euler/wiki/编译安装)
@@ -19,16 +23,19 @@ Euler中已经实现了一些图学习算法，这些算法的详情请见[论�
   - [Euler OP (based on TensorFlow)](https://github.com/alibaba/euler/wiki/Euler-OP)
   - [Euler Model Zoo (based on TensorFlow)](https://github.com/alibaba/euler/wiki/Euler-Model)
   - [Euler C++ API](https://github.com/alibaba/euler/wiki/CPP接口)
-- 基准测试
-  - [效果测试](https://github.com/alibaba/euler/wiki/效果测试)
+- 算法介绍  
+  - [LsHNE](https://github.com/alibaba/euler/wiki/LsHNE)
+  - [LasGNN](https://github.com/alibaba/euler/wiki/LasGNN)
   - [ScalableGCN](https://github.com/alibaba/euler/wiki/ScalableGCN)
+  - [论文列表](https://github.com/alibaba/euler/wiki/论文列表)
+  - [效果测试](https://github.com/alibaba/euler/wiki/效果测试)
 
 # 联系我们
 如果有任何问题，请直接提交[issues](https://github.com/alibaba/euler/issues)，也欢迎通过Euler开源技术支持邮件组（[euler-opensource@list.alibaba-inc.com](mailto:euler-opensource@list.alibaba-inc.com)）联系我们。
 
 # License
 
-Euler使用[Apache-2.0](LICENSE)许可
+Euler使用[Apache-2.0](https://github.com/alibaba/euler/blob/master/LICENSE)许可
 
 # 致谢
 
