@@ -54,7 +54,13 @@ def define_network_embedding_flags():
   tf.flags.DEFINE_boolean('sigmoid_loss', True, 'Whether to use sigmoid loss.')
   tf.flags.DEFINE_boolean('xent_loss', True, 'Whether to use xent loss.')
   tf.flags.DEFINE_integer('dim', 256, 'Dimension of embedding.')
+  tf.flags.DEFINE_integer('num_negs', 5, 'Number of negative samplings.')
   tf.flags.DEFINE_integer('order', 1, 'LINE order.')
+  tf.flags.DEFINE_integer('walk_len', 3, 'Length of random walk path.')
+  tf.flags.DEFINE_float('walk_p', 1., 'Node2Vec return parameter.')
+  tf.flags.DEFINE_float('walk_q', 1., 'Node2Vec in-out parameter.')
+  tf.flags.DEFINE_integer('left_win_size', 1, 'Left window size.')
+  tf.flags.DEFINE_integer('right_win_size', 1, 'Right window size.')
   tf.flags.DEFINE_list('fanouts', [10, 10], 'GCN fanouts.')
   tf.flags.DEFINE_enum('aggregator', 'mean',
                        ['gcn', 'mean', 'meanpool', 'maxpool'],
@@ -194,6 +200,7 @@ def run_network_embedding(flags_obj, master, is_chief):
         max_id=flags_obj.max_id,
         dim=flags_obj.dim,
         xent_loss=flags_obj.xent_loss,
+        num_negs=flags_obj.num_negs,
         order=flags_obj.order)
 
   elif flags_obj.model == 'randomwalk':
@@ -203,12 +210,12 @@ def run_network_embedding(flags_obj, master, is_chief):
         max_id=flags_obj.max_id,
         dim=flags_obj.dim,
         xent_loss=flags_obj.xent_loss,
-        num_negs=5,
-        walk_len=3,
-        walk_p=1,
-        walk_q=1,
-        left_win_size=1,
-        right_win_size=1)
+        num_negs=flags_obj.num_negs,
+        walk_len=flags_obj.walk_len,
+        walk_p=flags_obj.walk_p,
+        walk_q=flags_obj.walk_q,
+        left_win_size=flags_obj.left_win_size,
+        right_win_size=flags_obj.right_win_size)
 
   elif flags_obj.model == 'graphsage':
     model = models.GraphSage(
@@ -216,6 +223,7 @@ def run_network_embedding(flags_obj, master, is_chief):
         edge_type=flags_obj.train_edge_type,
         max_id=flags_obj.max_id,
         xent_loss=flags_obj.xent_loss,
+        num_negs=flags_obj.num_negs,
         metapath=metapath,
         fanouts=fanouts,
         dim=flags_obj.dim,
