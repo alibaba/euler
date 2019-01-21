@@ -28,7 +28,9 @@ Euler是大规模分布式的图学习框架，配合TensorFlow或者阿里开�
   - [LasGNN](https://github.com/alibaba/euler/wiki/LasGNN)
   - [ScalableGCN](https://github.com/alibaba/euler/wiki/ScalableGCN)
   - [论文列表](https://github.com/alibaba/euler/wiki/论文列表)
+- 测试结果 
   - [效果测试](https://github.com/alibaba/euler/wiki/效果测试)
+  - [性能测试](https://github.com/alibaba/euler/wiki/性能测试)
 
 # 联系我们
 如果有任何问题，请直接提交[issues](https://github.com/alibaba/euler/issues)，也欢迎通过Euler开源技术支持邮件组（[euler-opensource@list.alibaba-inc.com](mailto:euler-opensource@list.alibaba-inc.com)）联系我们。
