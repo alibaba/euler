@@ -133,19 +133,5 @@ bool HdfsFileIO::WriteData(const void* data, size_t size) {
   return (static_cast<size_t>(ret) == size);
 }
 
-std::vector<std::string> ListFile(const std::string& addr, int32_t port,
-                                  const std::string& dir) {
-  std::vector<std::string> file_list;
-  int32_t num = 0;
-  hdfsFS fs = hdfsConnect(addr.c_str(), port);
-  hdfsFileInfo* info = hdfsListDirectory(fs, dir.c_str(), &num);
-  for (int32_t i = 0; i < num; ++i) {
-    std::string path_file_name = info->mName;
-    file_list.push_back(path_file_name);
-    ++info;
-  }
-  return file_list;
-}
-
 }  // namespace common
 }  // namespace euler

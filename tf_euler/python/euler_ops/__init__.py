@@ -23,3 +23,4 @@ from tf_euler.python.euler_ops.neighbor_ops import *
 from tf_euler.python.euler_ops.sample_ops import *
 from tf_euler.python.euler_ops.walk_ops import *
 from tf_euler.python.euler_ops.type_ops import *
+from tf_euler.python.euler_ops.util_ops import *

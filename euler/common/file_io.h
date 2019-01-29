@@ -88,7 +88,7 @@ bool FileIO::Read(T* data) {
 }
 
 template<typename T>
-bool  FileIO::Read(size_t count, std::vector<T>* list) {
+bool FileIO::Read(size_t count, std::vector<T>* list) {
   list->resize(count);
   return ReadData(list->data(), count * sizeof(T));
 }

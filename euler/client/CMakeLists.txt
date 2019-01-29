@@ -40,7 +40,7 @@ add_executable(rpc_client_end2end_test rpc_client_end2end_test.cc)
 target_link_libraries(rpc_client_end2end_test client client_testing_util
                       gtest gtest_main)
 
-target_compile_options( grpc_channel_test PRIVATE -Wno-unused-parameter -Wno-inconsistent-missing-override)
+target_compile_options(grpc_channel_test PRIVATE -Wno-unused-parameter -Wno-inconsistent-missing-override)
 target_compile_options(rpc_manager_test PRIVATE -Wno-unused-parameter -Wno-inconsistent-missing-override)
 target_compile_options(rpc_client_test PRIVATE -Wno-unused-parameter -Wno-inconsistent-missing-override)
 target_compile_options(rpc_client_end2end_test PRIVATE -Wno-unused-parameter -Wno-inconsistent-missing-override)
