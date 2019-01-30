@@ -26,6 +26,7 @@ limitations under the License.
 #include "euler/core/graph_engine.h"
 #include "euler/common/data_types.h"
 #include "euler/common/local_file_io.h"
+#include "euler/common/timmer.h"
 
 namespace euler {
 namespace core {
@@ -384,6 +385,23 @@ TEST(LocalGraphTest, GraphEngine) {
   }
   std::cout << "\n";
 }
+
+/*
+TEST(LocalGraphTest, GraphEngine) {
+  GraphEngine graph_engine(compact);
+  graph_engine.Initialize("./");
+
+  std::vector<euler::common::NodeID> node_ids(50000);
+  for (int i = 0; i < 50000; ++i) {
+    node_ids[i] = i + 10000;
+  }
+  std::vector<int32_t> fids = {1};
+  std::vector<uint32_t> feature_nums;
+  std::vector<float> feature_values;
+  euler::common::TimmerBegin();
+  graph_engine.GetNodeFloat32Feature(node_ids, fids, &feature_nums, &feature_values);
+  std::cout << euler::common::GetTimmerInterval() << std::endl;
+}*/
 
 }  // namespace core
 }  // namespace euler

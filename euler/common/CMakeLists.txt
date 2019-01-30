@@ -1,19 +1,14 @@
 add_definitions(-DTHREADED) # Enable Zookeeper Sync API.
-
-add_library(common STATIC
-            alias_method.cc
-            random.cc
-            timmer.cc
-            bytes_reader.cc
-            hdfs_file_io.cc
-            local_file_io.cc
-            net_util.cc
-            server_monitor.cc
-            string_util.cc
-            zk_server_monitor.cc
-            zk_server_register.cc
-            zk_service.cc)
-target_link_libraries(common zookeeper hdfs glog)
+set (COMMON_FILE alias_method.cc random.cc timmer.cc bytes_reader.cc file_io_factory.cc local_file_io.cc
+  net_util.cc server_monitor.cc string_util.cc zk_server_monitor.cc zk_server_register.cc zk_service.cc)
+if (USE_HDFS)
+  add_definitions(-DHDFS) # Enable hdfs
+  add_library(common STATIC ${COMMON_FILE} hdfs_file_io.cc)
+  target_link_libraries(common zookeeper hdfs glog)
+else ()
+  add_library(common STATIC ${COMMON_FILE})
+  target_link_libraries(common zookeeper glog)
+endif (USE_HDFS)
 
 add_executable(local_file_io_test random.cc bytes_reader.cc local_file_io.cc local_file_io_test.cc)
 target_link_libraries(local_file_io_test

@@ -12,38 +12,31 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
+#ifndef EULER_COMMON_FILE_IO_FACTORY_H_
+#define EULER_COMMON_FILE_IO_FACTORY_H_
 
-#ifndef EULER_COMMON_LOCAL_FILE_IO_H_
-#define EULER_COMMON_LOCAL_FILE_IO_H_
-
-#include <fstream>
-#include <string>
+#include <unordered_map>
+#include <functional>
 
 #include "euler/common/file_io.h"
 
 namespace euler {
 namespace common {
 
-class LocalFileIO : public FileIO {
+class FileIOFactory {
  public:
-  LocalFileIO();
+  virtual FileIO* GetFileIO(const FileIO::ConfigMap& config) = 0;
 
-  virtual ~LocalFileIO();
-
-  bool Initialize(const ConfigMap& conf) override;
-
-  bool ReadData(void* data, size_t size) override;
-  bool WriteData(const void* data, size_t size) override;
-
-  bool FileEnd() override { return file_.eof();}
-
- private:
-  bool read_;
-
-  std::fstream file_;
+  virtual std::vector<std::string> ListFile(
+      const std::string& addr,
+      int32_t port, const std::string& dir,
+      const std::function<bool(std::string input)>& filter_fn = {}) = 0;
 };
 
-}  // namespace common
+extern std::unordered_map<std::string, FileIOFactory*> factory_map;
+
+}  // common
 }  // namespace euler
 
-#endif  // EULER_COMMON_LOCAL_FILE_IO_H_
+
+#endif  // EULER_COMMON_FILE_IO_FACTORY_H_

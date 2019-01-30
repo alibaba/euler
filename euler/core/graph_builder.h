@@ -22,8 +22,7 @@ limitations under the License.
 #include <memory>
 
 #include "euler/common/data_types.h"
-#include "euler/common/local_file_io.h"
-#include "euler/common/hdfs_file_io.h"
+#include "euler/common/file_io_factory.h"
 #include "euler/core/node.h"
 #include "euler/core/edge.h"
 #include "euler/core/graph.h"
@@ -47,10 +46,12 @@ class GraphBuilder {
       GlobalSamplerType global_sampler_type);
 
  private:
-  bool ParseBlock(euler::common::FileIO* file_io, Graph* graph);
+  bool ParseBlock(euler::common::FileIO* file_io, Graph* graph, int32_t checksum);
 
-  bool LoadData(const std::vector<std::string>& file_list,
-                Graph* graph, std::string addr, int32_t port);
+  bool LoadData(
+      LoaderType loader_type,
+      const std::vector<std::string>& file_list,
+      Graph* graph, std::string addr, int32_t port);
 
  private:
   std::unique_ptr<GraphFactory> factory_;

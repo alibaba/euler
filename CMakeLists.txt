@@ -12,6 +12,7 @@ add_definitions(-D_GLIBCXX_USE_CXX11_ABI=0 -O3 -fno-omit-frame-pointer)
 
 option(USE_JEMALLOC "Option for using jemalloc" ON)
 option(BUILD_COVERAGE "Build coverage system" OFF)
+option(USE_HDFS "Option for using hdfs" OFF)
 
 # Threads: defines CMAKE_THREAD_LIBS_INIT and adds -pthread compile option
 # for targets that link ${CMAKE_THREAD_LIBS_INIT}.

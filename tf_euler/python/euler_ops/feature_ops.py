@@ -21,17 +21,33 @@ import tensorflow as tf
 
 from tf_euler.python.euler_ops import base
 
+def _split_input_data(data_list, thread_num):
+  size = tf.shape(data_list)[0]
+  split_size = [size // thread_num] * (thread_num - 1)
+  if thread_num == 1:
+    split_size += [size]
+  else:
+    split_size += [-1]
+  split_data_list = tf.split(data_list, split_size)
+  return split_data_list
 
-def _get_sparse_feature(nodes_or_edges, feature_ids, op, default_values=None):
+def _get_sparse_feature(nodes_or_edges, feature_ids, op, thread_num,
+    default_values=None):
   if default_values is None:
     default_values = [0] * len(feature_ids)
 
-  sp_returns = op(nodes_or_edges, feature_ids, default_values,
-                  len(feature_ids))
-  return [tf.SparseTensor(*sp_return) for sp_return in zip(*sp_returns)]
+  split_data_list = _split_input_data(nodes_or_edges, thread_num)
+  split_result_list = [op(split_data, feature_ids, default_values,
+      len(feature_ids)) for split_data in split_data_list]
+  split_sp = []
+  for i in range(len(split_result_list)):
+    split_sp.append(
+        [tf.SparseTensor(*sp) for sp in zip(*split_result_list[i])])
+  split_sp_transpose = map(list, zip(*split_sp))
+  return [tf.sparse_concat(axis=0, sp_inputs=sp,
+      expand_nonconcat_dim=True) for sp in split_sp_transpose]
 
-
-def get_sparse_feature(nodes, feature_ids, default_values=None):
+def get_sparse_feature(nodes, feature_ids, thread_num=1, default_values=None):
   """
   Fetch sparse features of nodes.
 
@@ -46,10 +62,10 @@ def get_sparse_feature(nodes, feature_ids, default_values=None):
     A list of `SparseTensor` with the same length as `feature_ids`.
   """
   return _get_sparse_feature(nodes, feature_ids,
-                             base._LIB_OP.get_sparse_feature)
+                             base._LIB_OP.get_sparse_feature, thread_num)
 
 
-def get_edge_sparse_feature(edges, feature_ids, default_values=None):
+def get_edge_sparse_feature(edges, feature_ids, thread_num=1, default_values=None):
   """
   Args:
     edges: A 2-D `Tensor` of `int64`, with shape `[num_edges, 3]`.
@@ -62,18 +78,18 @@ def get_edge_sparse_feature(edges, feature_ids, default_values=None):
     A list of `SparseTensor` with the same length as `feature_ids`.
   """
   return _get_sparse_feature(edges, feature_ids,
-                             base._LIB_OP.get_edge_sparse_feature)
+                             base._LIB_OP.get_edge_sparse_feature, thread_num)
 
 
-def _get_dense_feature(nodes_or_edges, feature_ids, dimensions, op):
-  return op(
-      nodes_or_edges,
-      feature_ids=feature_ids,
-      dimensions=dimensions,
-      N=len(feature_ids))
+def _get_dense_feature(nodes_or_edges, feature_ids, dimensions, op, thread_num):
+  split_data_list = _split_input_data(nodes_or_edges, thread_num)
+  split_result_list = [op(split_data, feature_ids, dimensions, N=len(feature_ids))
+      for split_data in split_data_list]
+  split_result_list_transpose = map(list, zip(*split_result_list))
+  return [tf.concat(split_dense, 0)
+      for split_dense in split_result_list_transpose]
 
-
-def get_dense_feature(nodes, feature_ids, dimensions):
+def get_dense_feature(nodes, feature_ids, dimensions, thread_num=1):
   """
   Fetch dense features of nodes.
 
@@ -87,10 +103,9 @@ def get_dense_feature(nodes, feature_ids, dimensions):
     A list of `Tensor` with the same length as `feature_ids`.
   """
   return _get_dense_feature(nodes, feature_ids, dimensions,
-                            base._LIB_OP.get_dense_feature)
+      base._LIB_OP.get_dense_feature, thread_num)
 
-
-def get_edge_dense_feature(edges, feature_ids, dimensions):
+def get_edge_dense_feature(edges, feature_ids, dimensions, thread_num=1):
   """
   Fetch dense features of edges.
 
@@ -104,14 +119,18 @@ def get_edge_dense_feature(edges, feature_ids, dimensions):
     A list of `Tensor` with the same length as `feature_ids`.
   """
   return _get_dense_feature(edges, feature_ids, dimensions,
-                            base._LIB_OP.get_edge_dense_feature)
+      base._LIB_OP.get_edge_dense_feature, thread_num)
 
 
-def _get_binary_feature(nodes, feature_ids, op):
-  return op(nodes, feature_ids, N=len(feature_ids))
+def _get_binary_feature(nodes_or_edges, feature_ids, op, thread_num):
+  split_data_list = _split_input_data(nodes_or_edges, thread_num)
+  split_result_list = [op(split_data, feature_ids, N=len(feature_ids))
+      for split_data in split_data_list]
+  split_result_list_transpose = map(list, zip(*split_result_list))
+  return [tf.concat(split_binary, 0)
+      for split_binary in split_result_list_transpose]
 
-
-def get_binary_feature(nodes, feature_ids):
+def get_binary_feature(nodes, feature_ids, thread_num=1):
   """
   Fetch binary features of nodes.
 
@@ -124,10 +143,10 @@ def get_binary_feature(nodes, feature_ids):
     A list of `String Tensor` with the same length as `feature_ids`.
   """
   return _get_binary_feature(nodes, feature_ids,
-                             base._LIB_OP.get_binary_feature)
+                             base._LIB_OP.get_binary_feature, thread_num)
 
 
-def get_edge_binary_feature(edges, feature_ids):
+def get_edge_binary_feature(edges, feature_ids, thread_num=1):
   """
   Fetch binary features of edges.
 
@@ -140,4 +159,4 @@ def get_edge_binary_feature(edges, feature_ids):
     A list of `String Tensor` with the same length as `feature_ids`.
   """
   return _get_binary_feature(edges, feature_ids,
-                             base._LIB_OP.get_edge_binary_feature)
+                             base._LIB_OP.get_edge_binary_feature, thread_num)

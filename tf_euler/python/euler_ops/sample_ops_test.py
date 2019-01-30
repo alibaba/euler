@@ -23,6 +23,7 @@ import subprocess
 
 from tensorflow.python.platform import test
 import tensorflow as tf
+import numpy as np
 
 from tf_euler.python.euler_ops import base
 from tf_euler.python.euler_ops import sample_ops as ops
@@ -73,6 +74,21 @@ class SampleOpsTest(test.TestCase):
       self.assertEqual(10, len(edges))
       [self.assertTrue(e[1] in [1, 3, 5]) for e in edges]
 
+  def testSampleNodeWithSrc(self):
+    """Test euler graph sample edge"""
+    op = ops.sample_node_with_src([1, 2, 3, 4, 1], 5, False)
+    with tf.Session() as sess:
+      samples = sess.run(op)
+      samples = np.array(samples)
+      self.assertEqual(samples.shape, (5, 5))
+
+  def testSampleNodeWithSrcShare(self):
+    """Test euler graph sample edge"""
+    op = ops.sample_node_with_src([1, 2, 3, 4, 1], 5, True)
+    with tf.Session() as sess:
+      samples = sess.run(op)
+      samples = np.array(samples)
+      self.assertEqual(samples.shape, (5, 5))
 
 if __name__ == "__main__":
   test.main()

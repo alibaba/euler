@@ -49,6 +49,30 @@ class FastNode : public Node {
   std::vector<euler::common::IDWeightPair>
   GetTopKNeighbor(const std::vector<int32_t>& edge_types, int32_t k) const override;
 
+  int32_t GetFloat32FeatureValueNum() const override {
+    int32_t num = 1;
+    for (size_t i = 0; i < float_features_.size(); ++i) {
+      num = std::max(static_cast<int32_t>(float_features_[i].size()), num);
+    }
+    return num;
+  }
+
+  int32_t GetUint64FeatureValueNum() const override {
+    int32_t num = 1;
+    for (size_t i = 0; i < uint64_features_.size(); ++i) {
+      num = std::max(static_cast<int32_t>(uint64_features_[i].size()), num);
+    }
+    return num;
+  }
+
+  int32_t GetBinaryFeatureValueNum() const override {
+    int32_t num = 1;
+    for (size_t i = 0; i < binary_features_.size(); ++i) {
+      num = std::max(static_cast<int32_t>(binary_features_[i].size()), num);
+    }
+    return num;
+  }
+
   void GetUint64Feature(
       const std::vector<int32_t>& fids,
       std::vector<uint32_t>* feature_nums,
