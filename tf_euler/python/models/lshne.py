@@ -96,7 +96,7 @@ class LsHNE(base.UnsupervisedModel):
     pos = tf.reshape(pos,[-1,1])
     num_true = tf.size(pos)
     self.real_batch_size = num_true
-    negs = euler_ops.sample_node(num_true * self.num_negs, -1)
+    negs = euler_ops.sample_node_with_src(tf.reshape(src,[-1]), self.num_negs)
     negs = tf.reshape(negs, [num_true * self.num_negs])
     return src , pos, negs
 

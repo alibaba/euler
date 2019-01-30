@@ -48,6 +48,33 @@ class CompactNode : public Node {
   std::vector<euler::common::IDWeightPair>
   GetTopKNeighbor(const std::vector<int32_t>& edge_types, int32_t k) const override;
 
+  int32_t GetFloat32FeatureValueNum() const override {
+    int32_t num = 1, pre = 0;
+    for (size_t i = 0; i < float_features_idx_.size(); ++i) {
+      num = std::max(float_features_idx_[i] - pre, num);
+      pre = float_features_idx_[i];
+    }
+    return num;
+  }
+
+  int32_t GetUint64FeatureValueNum() const override {
+    int32_t num = 1, pre = 0;
+    for (size_t i = 0; i < uint64_features_idx_.size(); ++i) {
+      num = std::max(uint64_features_idx_[i] - pre, num);
+      pre = uint64_features_idx_[i];
+    }
+    return num;
+  }
+
+  int32_t GetBinaryFeatureValueNum() const override {
+    int32_t num = 1, pre = 0;
+    for (size_t i = 0; i < binary_features_idx_.size(); ++i) {
+      num = std::max(binary_features_idx_[i] - pre, num);
+      pre = binary_features_idx_[i];
+    }
+    return num;
+  }
+
   void GetUint64Feature(
       const std::vector<int32_t>& fids,
       std::vector<uint32_t>* feature_nums,

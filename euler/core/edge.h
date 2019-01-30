@@ -18,6 +18,7 @@ limitations under the License.
 
 #include <vector>
 #include <string>
+#include <algorithm>
 
 #include "euler/common/data_types.h"
 
@@ -38,6 +39,33 @@ class Edge {
   int32_t GetType() const {return type_;}
 
   float GetWeight() const {return weight_;}
+
+  virtual int32_t GetFloat32FeatureValueNum() const {
+    int32_t num = 1, pre = 0;
+    for (size_t i = 0; i < float_features_idx_.size(); ++i) {
+      num = std::max(float_features_idx_[i] - pre, num);
+      pre = float_features_idx_[i];
+    }
+    return num;
+  }
+
+  virtual int32_t GetUint64FeatureValueNum() const {
+    int32_t num = 1, pre = 0;
+    for (size_t i = 0; i < uint64_features_idx_.size(); ++i) {
+      num = std::max(uint64_features_idx_[i] - pre, num);
+      pre = uint64_features_idx_[i];
+    }
+    return num;
+  }
+
+  virtual int32_t GetBinaryFeatureValueNum() const {
+    int32_t num = 1, pre = 0;
+    for (size_t i = 0; i < binary_features_idx_.size(); ++i) {
+      num = std::max(binary_features_idx_[i] - pre, num);
+      pre = binary_features_idx_[i];
+    }
+    return num;
+  }
 
   // Get certain uint64 features
   virtual void GetUint64Feature(

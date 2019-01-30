@@ -48,9 +48,6 @@ class HdfsFileIO : public FileIO {
   hdfsFile file_;
 };
 
-std::vector<std::string> ListFile(const std::string& addr,
-                                  int32_t port, const std::string& dir);
-
 }  // namespace common
 }  // namespace euler
 

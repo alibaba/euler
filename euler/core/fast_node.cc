@@ -257,11 +257,15 @@ bool FastNode::DeSerialize(const char* s, size_t size) {
   if (!bytes_reader.GetUInt64(&id_) ||  // parse node id
       !bytes_reader.GetInt32(&type_) ||  // parse node type
       !bytes_reader.GetFloat(&weight_)) {  // parse node weight
+    LOG(ERROR) << "node info error";
     return false;
   }
 
   int32_t edge_group_num = 0;
-  if (!bytes_reader.GetInt32(&edge_group_num)) return false;
+  if (!bytes_reader.GetInt32(&edge_group_num)) {
+    LOG(ERROR) << "edge group num error";
+    return false;
+  }
 
   std::vector<int32_t> edge_group_ids(edge_group_num);
   for (int32_t i = 0; i < edge_group_num; ++i) {
@@ -271,12 +275,14 @@ bool FastNode::DeSerialize(const char* s, size_t size) {
   std::vector<int32_t> edge_group_size_list;
   if (!bytes_reader.GetInt32List(edge_group_num,
                                  &edge_group_size_list)) {
+    LOG(ERROR) << "edge group size list error";
     return false;
   }
 
   std::vector<float> edge_group_weight_list;
   if (!bytes_reader.GetFloatList(edge_group_num,
                                  &edge_group_weight_list)) {
+    LOG(ERROR) << "edge group weight list error";
     return false;
   }
 
@@ -287,6 +293,7 @@ bool FastNode::DeSerialize(const char* s, size_t size) {
   for (int32_t i = 0; i < edge_group_num; ++i) {
     ids_list[i] = std::vector<uint64_t>();
     if (!bytes_reader.GetUInt64List(edge_group_size_list[i], &ids_list[i])) {
+      LOG(ERROR) << "neighbor id list error";
       return false;
     }
   }
@@ -295,6 +302,7 @@ bool FastNode::DeSerialize(const char* s, size_t size) {
     weights_list[i] = std::vector<float>();
     if (!bytes_reader.GetFloatList(edge_group_size_list[i],
                                    &weights_list[i])) {
+      LOG(ERROR) << "neighbor weight list error";
       return false;
     }
   }
@@ -322,34 +330,40 @@ bool FastNode::DeSerialize(const char* s, size_t size) {
   // parse uint64 feature
   int32_t uint64_feature_type_num = 0;
   if (!bytes_reader.GetInt32(&uint64_feature_type_num)) {
+    LOG(ERROR) << "uint64 feature type num error";
     return false;
   }
   std::vector<int32_t> uint64_feature_size_list;
   uint64_features_.resize(uint64_feature_type_num);
   if (!bytes_reader.GetInt32List(uint64_feature_type_num,
                                  &uint64_feature_size_list)) {
+    LOG(ERROR) << "uint64 feature idx list error";
     return false;
   }
   for (int32_t i = 0; i < uint64_feature_type_num; ++i) {
     if (!bytes_reader.GetUInt64List(uint64_feature_size_list[i],
                                     &uint64_features_[i])) {
+      LOG(ERROR) << "uint64 feature value list error";
       return false;
     }
   }
   // parse float feature
   int32_t float_feature_type_num = 0;
   if (!bytes_reader.GetInt32(&float_feature_type_num)) {
+    LOG(ERROR) << "float feature type num error";
     return false;
   }
   std::vector<int32_t> float_feature_size_list;
   float_features_.resize(float_feature_type_num);
   if (!bytes_reader.GetInt32List(float_feature_type_num,
                                  &float_feature_size_list)) {
+    LOG(ERROR) << "float feature idx list error";
     return false;
   }
   for (int32_t i = 0; i < float_feature_type_num; ++i) {
     if (!bytes_reader.GetFloatList(float_feature_size_list[i],
                                    &float_features_[i])) {
+      LOG(ERROR) << "float feature value list error";
       return false;
     }
   }
@@ -357,17 +371,20 @@ bool FastNode::DeSerialize(const char* s, size_t size) {
   // parse binary feature
   int32_t binary_feature_type_num = 0;
   if (!bytes_reader.GetInt32(&binary_feature_type_num)) {
+    LOG(ERROR) << "binary feature type num error";
     return false;
   }
   std::vector<int32_t> binary_feature_size_list;
   binary_features_.resize(binary_feature_type_num);
   if (!bytes_reader.GetInt32List(binary_feature_type_num,
                                  &binary_feature_size_list)) {
+    LOG(ERROR) << "binary feature idx list error";
     return false;
   }
   for (int32_t i = 0; i < binary_feature_type_num; ++i) {
     if (!bytes_reader.GetString(binary_feature_size_list[i],
                                 &binary_features_[i])) {
+      LOG(ERROR) << "binary feature value list error";
       return false;
     }
   }

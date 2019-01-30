@@ -78,6 +78,12 @@ class Node {
   virtual std::vector<euler::common::IDWeightPair>
   GetTopKNeighbor(const std::vector<int32_t>& edge_types, int32_t k) const = 0;
 
+  virtual int32_t GetFloat32FeatureValueNum() const = 0;
+
+  virtual int32_t GetUint64FeatureValueNum() const = 0;
+
+  virtual int32_t GetBinaryFeatureValueNum() const = 0;
+
   virtual void GetUint64Feature(
       const std::vector<int32_t>& fids,
       std::vector<uint32_t>* feature_nums,

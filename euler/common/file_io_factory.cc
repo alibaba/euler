@@ -13,37 +13,18 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#ifndef EULER_COMMON_LOCAL_FILE_IO_H_
-#define EULER_COMMON_LOCAL_FILE_IO_H_
-
-#include <fstream>
-#include <string>
-
-#include "euler/common/file_io.h"
+#include "euler/common/file_io_factory.h"
 
 namespace euler {
 namespace common {
-
-class LocalFileIO : public FileIO {
- public:
-  LocalFileIO();
-
-  virtual ~LocalFileIO();
-
-  bool Initialize(const ConfigMap& conf) override;
-
-  bool ReadData(void* data, size_t size) override;
-  bool WriteData(const void* data, size_t size) override;
-
-  bool FileEnd() override { return file_.eof();}
-
- private:
-  bool read_;
-
-  std::fstream file_;
-};
-
-}  // namespace common
+std::unordered_map<std::string, FileIOFactory*> factory_map;
 }  // namespace euler
+}  // namespace common
 
-#endif  // EULER_COMMON_LOCAL_FILE_IO_H_
+#ifdef HDFS
+#include "euler/common/hdfs_file_io_factory.h"
+static euler::common::HdfsFileIOFactoryReg hdfs_reg;
+#endif
+
+#include "euler/common/local_file_io_factory.h"
+static euler::common::LocalFileIOFactoryReg local_reg;

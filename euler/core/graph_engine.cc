@@ -24,7 +24,7 @@ limitations under the License.
 #include "glog/logging.h"
 
 #include "euler/common/string_util.h"
-#include "euler/common/hdfs_file_io.h"
+#include "euler/common/file_io_factory.h"
 #include "euler/core/compact_graph_factory.h"
 #include "euler/core/fast_graph_factory.h"
 
@@ -53,33 +53,43 @@ bool GraphEngine::Initialize(std::unordered_map<std::string,
       conf["global_sampler_type"] == "edge" ? edge : (
       conf["global_sampler_type"] == "none" ? none : all));
   // using graph builder init graph
-  std::vector<std::string> file_list;
+  euler::common::FileIOFactory* file_io_factory = nullptr;
+  std::function<bool(std::string input)> full_file_filter_fn = {};
   if (loader_type == local) {
-    DIR *dp;
-    struct dirent *dirp;
-    if ((dp = opendir(directory.c_str())) == NULL) {
-      LOG(ERROR) << "directory " << directory << " invalid";
+    if (euler::common::factory_map.find("local") ==
+        euler::common::factory_map.end()) {
+      LOG(ERROR) << "no local file io factory register";
       return false;
     }
-    while ((dirp = readdir(dp)) != NULL) {
-      std::string file_name(dirp->d_name);
+    file_io_factory = euler::common::factory_map["local"];
+    full_file_filter_fn = [](std::string input) {
       std::vector<std::string> file_name_vec;
-      int32_t cnt = euler::common::split_string(file_name, '.', &file_name_vec);
-      if (cnt == 2 && file_name_vec.back() == "dat") {
-        file_list.push_back(directory + "/" + file_name);
-      }
-    }
-    partition_num_ = file_list.size();
-    closedir(dp);
+      int32_t cnt = euler::common::split_string(input, '.',
+                                                &file_name_vec);
+      if (cnt == 2 && file_name_vec.back() == "dat") return true;
+      return false;
+    };
   } else {
-    std::vector<std::string> full_file_list =
-        euler::common::ListFile(hdfs_addr, hdfs_port, directory);
-    // using shard idx and shard num to get the files that need to be loaded
-    partition_num_ = 0;
-    for (size_t i = 0; i < full_file_list.size(); ++i) {
-      int32_t temp = GetPartitionIdx(full_file_list[i]) + 1;
-      partition_num_ = temp > partition_num_ ? temp : partition_num_;
+    if (euler::common::factory_map.find("hdfs") ==
+        euler::common::factory_map.end()) {
+      LOG(ERROR) << "no hdfs file io factory register";
+      return false;
     }
+    file_io_factory = euler::common::factory_map["hdfs"];
+  }
+  std::vector<std::string> file_list;
+  std::vector<std::string> full_file_list =
+      file_io_factory->ListFile(hdfs_addr, hdfs_port, directory,
+                                full_file_filter_fn);
+  // using shard idx and shard num to get the files that need to be loaded
+  partition_num_ = 0;
+  for (size_t i = 0; i < full_file_list.size(); ++i) {
+    int32_t temp = GetPartitionIdx(full_file_list[i]) + 1;
+    partition_num_ = temp > partition_num_ ? temp : partition_num_;
+  }
+  if (shard_idx == -1) {
+    file_list = full_file_list;
+  } else {
     std::unordered_set<int32_t> filter;
     int32_t p_idx = 0;
     for (int32_t m = 0; p_idx < partition_num_; ++m) {
@@ -122,7 +132,7 @@ bool GraphEngine::Initialize(const std::string& directory) {
   conf["loader_type"] = "local";
   conf["hdfs_addr"] = "";
   conf["hdfs_port"] = "0";
-  conf["shard_idx"] = "0";
+  conf["shard_idx"] = "-1";
   conf["shard_num"] = "0";
   conf["global_sampler_type"] = "all";
   return Initialize(conf);
@@ -159,9 +169,17 @@ std::vector<int32_t> GraphEngine::GetNodeType(
 }
 
 #define GET_FEATURE(GET_STRUCT_METHOD, GET_FEATURE_METHOD, STRUCT_TYPE, \
-                    F_NUMS_PTR, F_VALUES_PTR, IDS, FIDS) {              \
+                    F_NUMS_PTR, F_VALUES_PTR, IDS, FIDS, GET_FV_NUM) {  \
+  STRUCT_TYPE* scout = nullptr;                                         \
+  int32_t fv_num = 1;                                                   \
+  for (size_t i = 0; i < IDS.size() && scout == nullptr; ++i) {         \
+    scout = graph_->GET_STRUCT_METHOD(IDS[0]);                          \
+  }                                                                     \
+  if (scout != nullptr) {                                               \
+    fv_num = scout->GET_FV_NUM();                                       \
+  }                                                                     \
   F_NUMS_PTR->reserve(IDS.size() * FIDS.size());                        \
-  F_VALUES_PTR->reserve(IDS.size() * FIDS.size());                      \
+  F_VALUES_PTR->reserve(IDS.size() * FIDS.size() * fv_num);             \
   for (size_t i = 0; i < IDS.size(); ++i) {                             \
     STRUCT_TYPE* strct = graph_->GET_STRUCT_METHOD(IDS[i]);             \
     if (strct != nullptr) {                                             \
@@ -181,7 +199,7 @@ void GraphEngine::GetNodeFloat32Feature(
     std::vector<uint32_t>* feature_nums,
     std::vector<float>* feature_values) const {
   GET_FEATURE(GetNodeByID, GetFloat32Feature, Node, feature_nums,
-              feature_values, node_ids, fids);
+              feature_values, node_ids, fids, GetFloat32FeatureValueNum);
 }
 
 void GraphEngine::GetNodeUint64Feature(
@@ -190,7 +208,7 @@ void GraphEngine::GetNodeUint64Feature(
     std::vector<uint32_t>* feature_nums,
     std::vector<uint64_t>* feature_values) const {
   GET_FEATURE(GetNodeByID, GetUint64Feature, Node, feature_nums,
-              feature_values, node_ids, fids);
+              feature_values, node_ids, fids, GetUint64FeatureValueNum);
 }
 
 void GraphEngine::GetNodeBinaryFeature(
@@ -199,7 +217,7 @@ void GraphEngine::GetNodeBinaryFeature(
     std::vector<uint32_t>* feature_nums,
     std::vector<char>* feature_values) const {
   GET_FEATURE(GetNodeByID, GetBinaryFeature, Node, feature_nums,
-              feature_values, node_ids, fids);
+              feature_values, node_ids, fids, GetBinaryFeatureValueNum);
 }
 
 void GraphEngine::GetEdgeFloat32Feature(
@@ -208,7 +226,7 @@ void GraphEngine::GetEdgeFloat32Feature(
     std::vector<uint32_t>* feature_nums,
     std::vector<float>* feature_values) const {
   GET_FEATURE(GetEdgeByID, GetFloat32Feature, Edge, feature_nums,
-              feature_values, edge_ids, fids);
+              feature_values, edge_ids, fids, GetFloat32FeatureValueNum);
 }
 
 void GraphEngine::GetEdgeUint64Feature(
@@ -217,7 +235,7 @@ void GraphEngine::GetEdgeUint64Feature(
     std::vector<uint32_t>* feature_nums,
     std::vector<uint64_t>* feature_values) const {
   GET_FEATURE(GetEdgeByID, GetUint64Feature, Edge, feature_nums,
-              feature_values, edge_ids, fids);
+              feature_values, edge_ids, fids, GetUint64FeatureValueNum);
 }
 
 void GraphEngine::GetEdgeBinaryFeature(
@@ -226,7 +244,7 @@ void GraphEngine::GetEdgeBinaryFeature(
     std::vector<uint32_t>* feature_nums,
     std::vector<char>* feature_values) const {
   GET_FEATURE(GetEdgeByID, GetBinaryFeature, Edge, feature_nums,
-              feature_values, edge_ids, fids);
+              feature_values, edge_ids, fids, GetBinaryFeatureValueNum);
 }
 
 #define GET_NODE_NEIGHBOR(METHOD, NEIGHBORS_PTR, NEIGHBOR_NUMS_PTR, \

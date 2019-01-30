@@ -26,6 +26,7 @@ add_library(tf_euler SHARED
             ops/neighbor_ops.cc
             ops/walk_ops.cc
             ops/type_ops.cc
+            ops/util_ops.cc
 
             kernels/sample_node_op.cc
             kernels/sample_edge_op.cc
@@ -45,6 +46,7 @@ add_library(tf_euler SHARED
             kernels/sample_neighbor_op.cc
             kernels/random_walk_op.cc
             kernels/gen_pair_op.cc
+            kernels/inflate_idx_op.cc
 
             utils/create_graph.cc)
 
