@@ -126,14 +126,14 @@ void Callback::BuildWeights(
   while (j < child_neighbors.size() && k < parent_neighbors.size()) {
     if (std::get<0>(child_neighbors[j]) < std::get<0>(parent_neighbors[k])) {
       if (std::get<0>(child_neighbors[j]) != parent_id) {
-        weights->at(j) = std::get<1>(child_neighbors[j]) / q_;  // q range
+        weights->at(j) = std::get<1>(child_neighbors[j]) / q_;  // d_tx = 2
       } else {
-        weights->at(j) = std::get<1>(child_neighbors[j]);  // backward to parent
+        weights->at(j) = std::get<1>(child_neighbors[j]) / p_;  // d_tx = 0
       }
       ++j;
     } else if (std::get<0>(child_neighbors[j]) ==
                std::get<0>(parent_neighbors[k])) {
-      weights->at(j) = std::get<1>(child_neighbors[j]) / p_;  // p range
+      weights->at(j) = std::get<1>(child_neighbors[j]);  // d_tx = 1
       ++k;
       ++j;
     } else {
@@ -142,9 +142,9 @@ void Callback::BuildWeights(
   }
   while (j < child_neighbors.size()) {
     if (std::get<0>(child_neighbors[j]) != parent_id) {
-      weights->at(j) = std::get<1>(child_neighbors[j]) / q_;
+      weights->at(j) = std::get<1>(child_neighbors[j]) / q_;  // d_tx = 2
     } else {
-      weights->at(j) = std::get<1>(child_neighbors[j]);
+      weights->at(j) = std::get<1>(child_neighbors[j]) / p_;  // d_tx = 0
     }
     ++j;
   }
