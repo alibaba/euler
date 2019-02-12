@@ -131,7 +131,8 @@ void Callback::BuildWeights(
         weights->at(j) = std::get<1>(child_neighbors[j]);  // backward to parent
       }
       ++j;
-    } else if (std::get<0>(child_neighbors[j]) == std::get<0>(parent_neighbors[k])) {
+    } else if (std::get<0>(child_neighbors[j]) ==
+               std::get<0>(parent_neighbors[k])) {
       weights->at(j) = std::get<1>(child_neighbors[j]) / p_;  // p range
       ++k;
       ++j;
@@ -187,7 +188,7 @@ void Graph::BiasedSampleNeighbor(
     const std::vector<NodeID>& node_ids,
     const std::vector<NodeID>& parent_node_ids,
     const std::vector<int>& edge_types,
-    const std::vector<int>& patent_edge_types,
+    const std::vector<int>& parent_edge_types,
     int count,
     float p,
     float q,
@@ -204,8 +205,8 @@ void Graph::BiasedSampleNeighbor(
                  parent_neighbors, child_neighbors, counter, p, q, count);
     Callback ccb(Callback::CHILD, callback, parent_node_ids,
                  parent_neighbors, child_neighbors, counter, p, q, count);
-    GetSortedFullNeighbor(node_ids, patent_edge_types, ccb);
-    GetSortedFullNeighbor(parent_node_ids, edge_types, pcb);
+    GetSortedFullNeighbor(node_ids, edge_types, ccb);
+    GetSortedFullNeighbor(parent_node_ids, parent_edge_types, pcb);
   }
 }
 

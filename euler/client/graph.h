@@ -61,7 +61,7 @@ class Graph {
       const std::vector<NodeID>& node_ids,
       const std::vector<NodeID>& parent_node_ids,
       const std::vector<int>& edge_types,
-      const std::vector<int>& patent_edge_types,
+      const std::vector<int>& parent_edge_types,
       int count,
       float p,
       float q,
