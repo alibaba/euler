@@ -35,7 +35,7 @@ public class BlockParser {
             4 + meta.getEdge_type_num() * 4 + meta.getEdge_type_num() * 4;  // edge group info
 
     int neighborNum = 0;
-    for (int i = 0; i < meta.getEdge_type_num(); ++i) {
+    for (int i = 0; i < meta.getNode_type_num(); ++i) {
       neighborNum += block.getNeighbor().get(i) == null ? 0 :
               block.getNeighbor().get(i).size();
     }
@@ -49,7 +49,7 @@ public class BlockParser {
     nodeInfoBytes += 4 + meta.getNode_uint64_feature_num() * 4 + uint64FeatureNum * 8;  // ui64 feature info size
 
     int floatFeatureNum = 0;
-    for (int i = 0; i < meta.getEdge_float_feature_num(); ++i) {
+    for (int i = 0; i < meta.getNode_float_feature_num(); ++i) {
       floatFeatureNum += block.getFloat_feature().get(i) == null ? 0 :
               block.getFloat_feature().get(i).size();
     }
