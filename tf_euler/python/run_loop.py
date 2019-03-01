@@ -30,6 +30,8 @@ from tf_euler.python.utils import context as utils_context
 from tf_euler.python.utils import hooks as utils_hooks
 from euler.python import service
 
+config = tf.ConfigProto()
+config.gpu_options.allow_growth = True
 
 def define_network_embedding_flags():
   tf.flags.DEFINE_enum('mode', 'train',
@@ -63,9 +65,13 @@ def define_network_embedding_flags():
   tf.flags.DEFINE_integer('right_win_size', 1, 'Right window size.')
   tf.flags.DEFINE_list('fanouts', [10, 10], 'GCN fanouts.')
   tf.flags.DEFINE_enum('aggregator', 'mean',
-                       ['gcn', 'mean', 'meanpool', 'maxpool'],
+                       ['gcn', 'mean', 'meanpool', 'maxpool', 'attention'],
                        'Sage aggregator.')
   tf.flags.DEFINE_boolean('concat', True, 'Sage aggregator concat.')
+  tf.flags.DEFINE_boolean('use_residual', False, 'Whether use skip connection.')
+  tf.flags.DEFINE_float('store_learning_rate', 0.001, 'Learning rate of store.')
+  tf.flags.DEFINE_float('store_init_maxval', 0.05,
+                        'Max initial value of store.')
   tf.flags.DEFINE_integer('head_num', 1, 'multi head attention num')
 
   tf.flags.DEFINE_string('model_dir', 'ckpt', 'Model checkpoint.')
@@ -97,13 +103,6 @@ def run_train(model, flags_obj, master, is_chief):
     source = euler_ops.sample_node(
         count=batch_size, node_type=flags_obj.train_node_type)
   source.set_shape([batch_size])
-  # dataset = tf.data.TextLineDataset(flags_obj.id_file)
-  # dataset = dataset.map(
-  #     lambda id_str: tf.string_to_number(id_str, out_type=tf.int64))
-  # dataset = dataset.shuffle(buffer_size=20000)
-  # dataset = dataset.batch(batch_size)
-  # dataset = dataset.repeat(flags_obj.num_epochs)
-  # source = dataset.make_one_shot_iterator().get_next()
   _, loss, metric_name, metric = model(source)
 
   optimizer_class = optimizers.get(flags_obj.optimizer)
@@ -134,7 +133,8 @@ def run_train(model, flags_obj, master, is_chief):
       is_chief=is_chief,
       checkpoint_dir=flags_obj.model_dir,
       log_step_count_steps=None,
-      hooks=hooks) as sess:
+      hooks=hooks,
+      config=config) as sess:
     while not sess.should_stop():
       sess.run(train_op)
 
@@ -154,7 +154,8 @@ def run_evaluate(model, flags_obj):
   with tf.train.MonitoredTrainingSession(
       checkpoint_dir=flags_obj.model_dir,
       save_checkpoint_secs=None,
-      log_step_count_steps=None) as sess:
+      log_step_count_steps=None,
+      config=config) as sess:
     while not sess.should_stop():
       metric_val = sess.run(metric)
 
@@ -175,7 +176,8 @@ def run_save_embedding(model, flags_obj):
   with tf.train.MonitoredTrainingSession(
       checkpoint_dir=flags_obj.model_dir,
       save_checkpoint_secs=None,
-      log_step_count_steps=None) as sess:
+      log_step_count_steps=None,
+      config=config) as sess:
     while not sess.should_stop():
       embedding_val = sess.run(embedding)
       embedding_vals.append(embedding_val)
@@ -217,6 +219,36 @@ def run_network_embedding(flags_obj, master, is_chief):
         left_win_size=flags_obj.left_win_size,
         right_win_size=flags_obj.right_win_size)
 
+  elif flags_obj.model == 'gcn':
+    model = models.GCN(
+        label_idx=flags_obj.label_idx,
+        label_dim=flags_obj.label_dim,
+        num_classes=flags_obj.num_classes,
+        sigmoid_loss=flags_obj.sigmoid_loss,
+        metapath=metapath,
+        dim=flags_obj.dim,
+        aggregator=flags_obj.aggregator,
+        feature_idx=flags_obj.feature_idx,
+        feature_dim=flags_obj.feature_dim,
+        use_residual=flags_obj.use_residual)
+
+  elif flags_obj.model == 'scalable_gcn':
+    model = models.ScalableGCN(
+        label_idx=flags_obj.label_idx,
+        label_dim=flags_obj.label_dim,
+        num_classes=flags_obj.num_classes,
+        sigmoid_loss=flags_obj.sigmoid_loss,
+        edge_type=metapath[0],
+        num_layers=len(fanouts),
+        dim=flags_obj.dim,
+        aggregator=flags_obj.aggregator,
+        feature_idx=flags_obj.feature_idx,
+        feature_dim=flags_obj.feature_dim,
+        max_id=flags_obj.max_id,
+        use_residual=flags_obj.use_residual,
+        store_learning_rate=flags_obj.store_learning_rate,
+        store_init_maxval=flags_obj.store_init_maxval)
+
   elif flags_obj.model == 'graphsage':
     model = models.GraphSage(
         node_type=flags_obj.train_node_type,
@@ -246,15 +278,17 @@ def run_network_embedding(flags_obj, master, is_chief):
         feature_idx=flags_obj.feature_idx,
         feature_dim=flags_obj.feature_dim)
 
-  elif flags_obj.model == 'scalable_gcn':
-    model = models.ScalableGCN(
+  elif flags_obj.model == 'scalable_sage':
+    model = models.ScalableSage(
         label_idx=flags_obj.label_idx, label_dim=flags_obj.label_dim,
         num_classes=flags_obj.num_classes, sigmoid_loss=flags_obj.sigmoid_loss,
         edge_type=metapath[0], fanout=fanouts[0], num_layers=len(fanouts),
         dim=flags_obj.dim,
         aggregator=flags_obj.aggregator, concat=flags_obj.concat,
         feature_idx=flags_obj.feature_idx, feature_dim=flags_obj.feature_dim,
-        max_id=flags_obj.max_id)
+        max_id=flags_obj.max_id,
+        store_learning_rate=flags_obj.store_learning_rate,
+        store_init_maxval=flags_obj.store_init_maxval)
 
   elif flags_obj.model == 'gat':
     model = models.GAT(

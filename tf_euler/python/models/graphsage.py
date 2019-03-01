@@ -89,27 +89,29 @@ class SupervisedGraphSage(base.SupervisedModel):
     return self._encoder(inputs)
 
 
-class ScalableGCN(base.SupervisedModel):
+class ScalableSage(base.SupervisedModel):
   def __init__(self, label_idx, label_dim, edge_type, fanout, num_layers, dim,
                aggregator='mean', concat=False,
                feature_idx=-1, feature_dim=0, max_id=-1,
+               store_learning_rate=0.001, store_init_maxval=0.05,
                *args, **kwargs):
-    super(ScalableGCN, self).__init__(label_idx, label_dim, *args, **kwargs)
+    super(ScalableSage, self).__init__(label_idx, label_dim, *args, **kwargs)
     self._encoder = encoders.ScalableSageEncoder(
-        edge_type, fanout, num_layers, dim=dim,
-        aggregator=aggregator, concat=concat,
-        feature_idx=feature_idx, feature_dim=feature_dim, max_id=max_id)
+        edge_type, fanout, num_layers, dim, aggregator, concat,
+        feature_idx=feature_idx, feature_dim=feature_dim, max_id=max_id,
+        store_learning_rate=store_learning_rate,
+        store_init_maxval=store_init_maxval)
 
   def encoder(self, inputs):
     return self._encoder(inputs)
 
   def call(self, inputs):
-    model_output = super(ScalableGCN, self).call(inputs)
+    model_output = super(ScalableSage, self).call(inputs)
     self._loss = model_output.loss
     return model_output
 
   def make_session_run_hook(self):
-    return _ScalableGCNHook(self._encoder, self._loss)
+    return _ScalableSageHook(self._encoder, self._loss)
 
   def get_train_op(self):
     return tf.group(
@@ -118,7 +120,7 @@ class ScalableGCN(base.SupervisedModel):
         self._encoder.optimize_store_op)
 
 
-class _ScalableGCNHook(tf.train.SessionRunHook):
+class _ScalableSageHook(tf.train.SessionRunHook):
   def __init__(self, scalable_sage_encoder, loss):
     self._scalable_sage_encoder = scalable_sage_encoder
     self._loss = loss

@@ -20,8 +20,9 @@ from __future__ import print_function
 import tensorflow as tf
 
 from tf_euler.python import aggregators
-from tf_euler.python import layers
 from tf_euler.python import euler_ops
+from tf_euler.python import layers
+from tf_euler.python import sparse_aggregators
 from tf_euler.python.utils import embedding as utils_embedding
 from tf_euler.python.utils import context as utils_context
 
@@ -56,6 +57,177 @@ class ShallowEncoder(layers.Layer):
           inputs, [self.feature_idx], [self.feature_dim])[0]
       embeddings.append(self.dense(feature))
     return tf.add_n(embeddings)
+
+
+class GCNEncoder(layers.Layer):
+  """
+  GCN node encoder aggregating multi-hop neighbor information.
+  """
+
+  def __init__(self, metapath, dim, aggregator='mean',
+               feature_idx=-1, feature_dim=0, max_id=-1,
+               use_feature=True, use_id=False, use_residual=False, **kwargs):
+    super(GCNEncoder, self).__init__(**kwargs)
+    self.metapath = metapath
+    self.num_layers = len(metapath)
+
+    self.use_id = use_id
+    self.use_feature = use_feature
+    self.use_residual = use_residual
+    if use_id:
+      self.id_layer = layers.Embedding(max_id, dim)
+    if use_feature and use_residual:
+      self.feature_layer = layers.Dense(dim, use_bias=False)
+    self.feature_idx = feature_idx
+    self.feature_dim = feature_dim
+
+    self.aggregators = []
+    aggregator_class = sparse_aggregators.get(aggregator)
+    for layer in range(self.num_layers):
+      activation = tf.nn.relu if layer < self.num_layers - 1 else None
+      self.aggregators.append(aggregator_class(dim, activation=activation))
+
+  def node_encoder(self, inputs):
+    embeddings = []
+
+    if self.use_id:
+      embeddings.append(self.id_layer(inputs))
+
+    if self.use_feature:
+      from_feature = euler_ops.get_dense_feature(
+          inputs, [self.feature_idx], [self.feature_dim])[0]
+      if self.use_residual:
+        from_feature = self.feature_layer(from_feature)
+      embeddings.append(from_feature)
+
+    if self.use_residual:
+      return tf.add_n(embeddings)
+    else:
+      return tf.concat(embeddings, 1)
+
+  def call(self, inputs):
+    nodes, adjs = euler_ops.get_multi_hop_neighbor(inputs, self.metapath)
+    hidden = [self.node_encoder(node) for node in nodes]
+    for layer in range(self.num_layers):
+      aggregator = self.aggregators[layer]
+      next_hidden = []
+      for hop in range(self.num_layers - layer):
+        if self.use_residual:
+          h = hidden[hop] + \
+              aggregator((hidden[hop], hidden[hop + 1], adjs[hop]))
+        else:
+          h = aggregator((hidden[hop], hidden[hop + 1], adjs[hop]))
+        next_hidden.append(h)
+      hidden = next_hidden
+
+    output_shape = inputs.shape.concatenate(hidden[0].shape[-1])
+    output_shape = [d if d is not None else -1 for d in output_shape.as_list()]
+    return tf.reshape(hidden[0], output_shape)
+
+
+class ScalableGCNEncoder(GCNEncoder):
+  def __init__(self, edge_type, num_layers, dim, aggregator='mean',
+               feature_idx=-1, feature_dim=0, max_id=-1,
+               use_feature=True, use_id=False, use_residual=False,
+               store_learning_rate=0.001, store_init_maxval=0.05, **kwargs):
+    metapath = [edge_type] * num_layers
+    super(ScalableGCNEncoder, self).__init__(
+        metapath, dim, aggregator, feature_idx, feature_dim, max_id,
+        use_feature, use_id, use_residual, **kwargs)
+    self.dim = dim
+    self.edge_type = edge_type
+    self.max_id = max_id
+    self.store_learning_rate = store_learning_rate
+    self.store_init_maxval = store_init_maxval
+
+  def build(self, input_shape):
+    self.stores = [
+        tf.get_variable('store_layer_{}'.format(i),
+                        [self.max_id + 2, self.dim],
+                        initializer=tf.random_uniform_initializer(
+                            maxval=self.store_init_maxval, seed=1),
+                        trainable=False,
+                        collections=[tf.GraphKeys.LOCAL_VARIABLES])
+        for i in range(1, self.num_layers)]
+    self.gradient_stores = [
+        tf.get_variable('gradient_store_layer_{}'.format(i),
+                        [self.max_id + 2, self.dim],
+                        initializer=tf.zeros_initializer(),
+                        trainable=False,
+                        collections=[tf.GraphKeys.LOCAL_VARIABLES])
+        for i in range(1, self.num_layers)]
+    self.store_optimizer = tf.train.AdamOptimizer(self.store_learning_rate)
+
+  def call(self, inputs, training=None):
+    if training is None:
+      training = utils_context.training
+    if not training:
+      return super(ScalableGCNEncoder, self).call(inputs)
+
+    (node, neighbor), (adj,) = \
+        euler_ops.get_multi_hop_neighbor(inputs, [self.edge_type])
+    node_embedding = self.node_encoder(node)
+    neigh_embedding = self.node_encoder(neighbor)
+
+    node_embeddings = []
+    neigh_embeddings = []
+    for layer in range(self.num_layers):
+      aggregator = self.aggregators[layer]
+
+      if self.use_residual:
+        node_embedding += aggregator((node_embedding, neigh_embedding, adj))
+      else:
+        node_embedding = aggregator((node_embedding, neigh_embedding, adj))
+      node_embeddings.append(node_embedding)
+
+      if layer < self.num_layers - 1:
+        neigh_embedding = tf.nn.embedding_lookup(self.stores[layer], neighbor)
+        neigh_embeddings.append(neigh_embedding)
+
+    self.update_store_op = self._update_store(node, node_embeddings)
+    store_loss, self.optimize_store_op = \
+        self._optimize_store(node, node_embeddings)
+    self.get_update_gradient_op = lambda loss: \
+        self._update_gradient(loss + store_loss, neighbor, neigh_embeddings)
+
+    output_shape = inputs.shape.concatenate(node_embedding.shape[-1])
+    output_shape = [d if d is not None else -1 for d in output_shape.as_list()]
+    return tf.reshape(node_embedding, output_shape)
+
+  def _update_store(self, node, node_embeddings):
+    update_ops = []
+    for store, node_embedding in zip(self.stores, node_embeddings):
+      update_ops.append(
+          utils_embedding.embedding_update(store, node, node_embedding))
+    return tf.group(*update_ops)
+
+  def _update_gradient(self, loss, neighbor, neigh_embeddings):
+    update_ops = []
+    for gradient_store, neigh_embedding in zip(
+        self.gradient_stores, neigh_embeddings):
+      embedding_gradient = tf.gradients(loss, neigh_embedding)[0]
+      update_ops.append(
+          utils_embedding.embedding_add(gradient_store,
+                                        neighbor, embedding_gradient))
+    return tf.group(*update_ops)
+
+  def _optimize_store(self, node, node_embeddings):
+    if not self.gradient_stores:
+      return tf.zeros([]), tf.no_op()
+
+    losses = []
+    clear_ops = []
+    for gradient_store, node_embedding in zip(
+        self.gradient_stores, node_embeddings):
+      embedding_gradient = tf.nn.embedding_lookup(gradient_store, node)
+      with tf.control_dependencies([embedding_gradient]):
+        clear_ops.append(
+            utils_embedding.embedding_update(gradient_store, node, 0))
+      losses.append(tf.reduce_sum(node_embedding * embedding_gradient))
+
+    store_loss = tf.add_n(losses)
+    with tf.control_dependencies(clear_ops):
+      return store_loss, self.store_optimizer.minimize(store_loss)
 
 
 class SageEncoder(layers.Layer):
@@ -139,7 +311,8 @@ class ScalableSageEncoder(SageEncoder):
   def __init__(self, edge_type, fanout, num_layers, dim,
                aggregator='mean', concat=False, shared_aggregators=None,
                feature_idx=-1, feature_dim=0, max_id=-1,
-               use_feature=True, use_id=False, **kwargs):
+               use_feature=True, use_id=False,
+               store_learning_rate=0.001, store_init_maxval=0.05, **kwargs):
     metapath = [edge_type] * num_layers
     fanouts = [fanout] * num_layers
     super(ScalableSageEncoder, self).__init__(
@@ -148,12 +321,15 @@ class ScalableSageEncoder(SageEncoder):
     self.edge_type = edge_type
     self.fanout = fanout
     self.max_id = max_id
+    self.store_learning_rate = store_learning_rate
+    self.store_init_maxval = store_init_maxval
 
   def build(self, input_shape):
     self.stores = [
         tf.get_variable('store_layer_{}'.format(i),
                         [self.max_id + 2, dim],
-                        initializer=tf.glorot_uniform_initializer(),
+                        initializer=tf.random_uniform_initializer(
+                            maxval=self.store_init_maxval, seed=1),
                         trainable=False)
         for i, dim in enumerate(self.dims[1:-1], 1)]
     self.gradient_stores = [
@@ -162,7 +338,7 @@ class ScalableSageEncoder(SageEncoder):
                         initializer=tf.zeros_initializer(),
                         trainable=False)
         for i, dim in enumerate(self.dims[1:-1], 1)]
-    self.store_optimizer = tf.train.AdamOptimizer(0.002)
+    self.store_optimizer = tf.train.AdamOptimizer(self.store_learning_rate)
 
   def call(self, inputs, training=None):
     if training is None:
@@ -191,11 +367,13 @@ class ScalableSageEncoder(SageEncoder):
         neigh_embeddings.append(neigh_embedding)
 
     self.update_store_op = self._update_store(node, node_embeddings)
-    self.get_update_gradient_op = \
-        lambda loss: self._update_gradient(loss, neighbor, neigh_embeddings)
-    self.optimize_store_op = self._optimize_store(node, node_embeddings)
+    store_loss, self.optimize_store_op = \
+        self._optimize_store(node, node_embeddings)
+    self.get_update_gradient_op = lambda loss: \
+        self._update_gradient(loss + store_loss, neighbor, neigh_embeddings)
 
-    output_shape = tf.concat([tf.shape(inputs), [node_embedding.shape[-1]]], 0)
+    output_shape = inputs.shape.concatenate(node_embedding.shape[-1])
+    output_shape = [d if d is not None else -1 for d in output_shape.as_list()]
     return tf.reshape(node_embedding, output_shape)
 
   def _update_store(self, node, node_embeddings):
@@ -217,19 +395,21 @@ class ScalableSageEncoder(SageEncoder):
 
   def _optimize_store(self, node, node_embeddings):
     if not self.gradient_stores:
-      return tf.no_op()
+      return tf.zeros([]), tf.no_op()
 
     losses = []
+    clear_ops = []
     for gradient_store, node_embedding in zip(self.gradient_stores,
                                               node_embeddings):
       embedding_gradient = tf.nn.embedding_lookup(gradient_store, node)
       with tf.control_dependencies([embedding_gradient]):
-        clear_gradient_op = \
-            utils_embedding.embedding_update(gradient_store, node, 0)
-      with tf.control_dependencies([clear_gradient_op]):
-        losses.append(
-            tf.reduce_sum(tf.multiply(node_embedding, embedding_gradient)))
-    return self.store_optimizer.minimize(tf.add_n(losses))
+        clear_ops.append(
+            utils_embedding.embedding_update(gradient_store, node, 0))
+      losses.append(tf.reduce_sum(node_embedding * embedding_gradient))
+
+    store_loss = tf.add_n(losses)
+    with tf.control_dependencies(clear_ops):
+      return store_loss, self.store_optimizer.minimize(store_loss)
 
 
 class SparseSageEncoder(SageEncoder):
