@@ -94,3 +94,36 @@ def sample_fanout(nodes, edge_types, counts, default_node=-1):
     weights_list.append(tf.reshape(weights, [-1]))
     type_list.append(tf.reshape(weights, [-1]))
   return neighbors_list, weights_list, type_list
+
+
+def get_multi_hop_neighbor(nodes, edge_types):
+  """
+  Get multi-hop neighbors with adjacent matrix.
+
+  Args:
+    nodes: A 1-D `tf.Tensor` of `int64`.
+    edge_types: A list of 1-D `tf.Tensor` of `int32`. Specify edge types to
+      filter outgoing edges in each hop.
+
+  Return:
+    A tuple of list: (nodes, adjcents)
+      nodes: A list of N + 1 `tf.Tensor` of `int64`, N is the number of
+        hops. Specify node set of each hop, including the root.
+      adjcents: A list of N `tf.SparseTensor` of `int64`. Specify adjacent
+        matrix between hops.
+  """
+  nodes = tf.reshape(nodes, [-1])
+  nodes_list = [nodes]
+  adj_list = []
+  for hop_edge_types in edge_types:
+    neighbor, weight, _ = get_full_neighbor(nodes, hop_edge_types)
+    next_nodes, next_idx = tf.unique(neighbor.values, out_idx=tf.int64)
+    next_indices = tf.stack([neighbor.indices[:, 0], next_idx], 1)
+    next_values = weight.values
+    next_shape = [tf.size(nodes), tf.size(next_nodes)]
+    next_adj = tf.sparse.SparseTensor(next_indices, next_values, next_shape)
+    next_adj = tf.sparse.reorder(next_adj)
+    nodes_list.append(next_nodes)
+    adj_list.append(next_adj)
+    nodes = next_nodes
+  return nodes_list, adj_list

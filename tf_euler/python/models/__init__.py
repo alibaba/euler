@@ -21,7 +21,8 @@ from tf_euler.python.models.base import SupervisedModel
 from tf_euler.python.models.lasgnn import LasGNN
 from tf_euler.python.models.line import LINE
 from tf_euler.python.models.node2vec import Node2Vec
+from tf_euler.python.models.gcn import GCN, ScalableGCN
 from tf_euler.python.models.graphsage import GraphSage, SupervisedGraphSage, \
-                                             ScalableGCN
+                                             ScalableSage
 from tf_euler.python.models.gat import GAT
 from tf_euler.python.models.lshne import LsHNE
