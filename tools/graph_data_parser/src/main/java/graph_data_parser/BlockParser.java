@@ -161,12 +161,12 @@ public class BlockParser {
       }
     }
 
-    writer.writeInt(meta.getEdge_binary_feature_num());
-    for (int i = 0; i < meta.getEdge_binary_feature_num(); ++i) {
+    writer.writeInt(meta.getNode_binary_feature_num());
+    for (int i = 0; i < meta.getNode_binary_feature_num(); ++i) {
       writer.writeInt(block.getBinary_feature().get(i) == null ? 0 :
               block.getBinary_feature().get(i).length());
     }
-    for (int i = 0; i < meta.getEdge_binary_feature_num(); ++i) {
+    for (int i = 0; i < meta.getNode_binary_feature_num(); ++i) {
       if (block.getBinary_feature().get(i) != null) {
         writer.writeString(block.getBinary_feature().get(i));
       }
