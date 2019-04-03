@@ -35,7 +35,7 @@ public class BlockParser {
             4 + meta.getEdge_type_num() * 4 + meta.getEdge_type_num() * 4;  // edge group info
 
     int neighborNum = 0;
-    for (int i = 0; i < meta.getNode_type_num(); ++i) {
+    for (int i = 0; i < meta.getEdge_type_num(); ++i) {
       neighborNum += block.getNeighbor().get(i) == null ? 0 :
               block.getNeighbor().get(i).size();
     }
