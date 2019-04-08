@@ -24,35 +24,30 @@ from tf_euler.python.models import base
 
 
 class GraphSage(base.UnsupervisedModel):
-  def __init__(self,
-               node_type,
-               edge_type,
-               max_id,
-               metapath,
-               fanouts,
-               dim,
-               aggregator='mean',
-               concat=False,
-               feature_idx=-1,
-               feature_dim=0,
-               use_feature=True,
-               use_id=False,
-               *args,
-               **kwargs):
-    super(GraphSage, self).__init__(node_type, edge_type, max_id, *args,
-                                    **kwargs)
+  def __init__(self, node_type, edge_type, max_id,
+               metapath, fanouts, dim, aggregator='mean', concat=False,
+               feature_idx=-1, feature_dim=0, use_feature=None, use_id=False,
+               sparse_feature_idx=-1, sparse_feature_max_id=-1,
+               embedding_dim=16, use_hash_embedding=False, use_residual=False,
+               *args, **kwargs):
+    super(GraphSage, self).__init__(
+        node_type, edge_type, max_id, *args, **kwargs)
     self._target_encoder = encoders.SageEncoder(
-        metapath,
-        fanouts,
-        dim=dim,
-        aggregator=aggregator,
-        concat=concat,
-        feature_idx=feature_idx,
-        feature_dim=feature_dim,use_feature=use_feature,max_id=max_id+1,use_id=use_id)
+        metapath, fanouts, dim, aggregator, concat,
+        feature_idx=feature_idx, feature_dim=feature_dim,
+        max_id=max_id, use_id=use_id,
+        sparse_feature_idx=sparse_feature_idx,
+        sparse_feature_max_id=sparse_feature_max_id,
+        embedding_dim=embedding_dim, use_hash_embedding=use_hash_embedding,
+        use_residual=use_residual)
     self._context_encoder = encoders.SageEncoder(
-        metapath, fanouts, dim=dim, aggregator=aggregator, concat=concat,
-        feature_idx=feature_idx, feature_dim=feature_dim,max_id=max_id+1, use_feature=use_feature,
-        use_id=use_id)
+        metapath, fanouts, dim, aggregator, concat,
+        feature_idx=feature_idx, feature_dim=feature_dim,
+        max_id=max_id, use_id=use_id,
+        sparse_feature_idx=sparse_feature_idx,
+        sparse_feature_max_id=sparse_feature_max_id,
+        embedding_dim=embedding_dim, use_hash_embedding=use_hash_embedding,
+        use_residual=use_residual)
 
   def target_encoder(self, inputs):
     return self._target_encoder(inputs)
@@ -62,43 +57,45 @@ class GraphSage(base.UnsupervisedModel):
 
 
 class SupervisedGraphSage(base.SupervisedModel):
-  def __init__(self,
-               label_idx,
-               label_dim,
-               metapath,
-               fanouts,
-               dim,
-               aggregator='mean',
-               concat=False,
-               feature_idx=-1,
-               feature_dim=0,
-               *args,
-               **kwargs):
-    super(SupervisedGraphSage, self).__init__(label_idx, label_dim, *args,
-                                              **kwargs)
+  def __init__(self, label_idx, label_dim,
+               metapath, fanouts, dim, aggregator='mean', concat=False,
+               feature_idx=-1, feature_dim=0, max_id=-1, use_id=False,
+               sparse_feature_idx=-1, sparse_feature_max_id=-1,
+               embedding_dim=16, use_hash_embedding=False, use_residual=False,
+               *args, **kwargs):
+    super(SupervisedGraphSage, self).__init__(
+        label_idx, label_dim, *args, **kwargs)
     self._encoder = encoders.SageEncoder(
-        metapath,
-        fanouts,
-        dim=dim,
-        aggregator=aggregator,
-        concat=concat,
-        feature_idx=feature_idx,
-        feature_dim=feature_dim)
+        metapath, fanouts, dim, aggregator, concat,
+        feature_idx=feature_idx, feature_dim=feature_dim,
+        max_id=max_id, use_id=use_id,
+        sparse_feature_idx=sparse_feature_idx,
+        sparse_feature_max_id=sparse_feature_max_id,
+        embedding_dim=embedding_dim, use_hash_embedding=use_hash_embedding,
+        use_residual=use_residual)
 
   def encoder(self, inputs):
     return self._encoder(inputs)
 
 
 class ScalableSage(base.SupervisedModel):
-  def __init__(self, label_idx, label_dim, edge_type, fanout, num_layers, dim,
+  def __init__(self, label_idx, label_dim,
+               edge_type, fanout, num_layers, dim,
                aggregator='mean', concat=False,
-               feature_idx=-1, feature_dim=0, max_id=-1,
+               feature_idx=-1, feature_dim=0, max_id=-1, use_id=False,
+               sparse_feature_idx=-1, sparse_feature_max_id=-1,
+               embedding_dim=16, use_hash_embedding=False, use_residual=False,
                store_learning_rate=0.001, store_init_maxval=0.05,
                *args, **kwargs):
     super(ScalableSage, self).__init__(label_idx, label_dim, *args, **kwargs)
     self._encoder = encoders.ScalableSageEncoder(
         edge_type, fanout, num_layers, dim, aggregator, concat,
-        feature_idx=feature_idx, feature_dim=feature_dim, max_id=max_id,
+        feature_idx=feature_idx, feature_dim=feature_dim,
+        max_id=max_id, use_id=use_id,
+        sparse_feature_idx=sparse_feature_idx,
+        sparse_feature_max_id=sparse_feature_max_id,
+        embedding_dim=embedding_dim, use_hash_embedding=use_hash_embedding,
+        use_residual=use_residual,
         store_learning_rate=store_learning_rate,
         store_init_maxval=store_init_maxval)
 

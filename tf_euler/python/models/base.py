@@ -90,8 +90,8 @@ class UnsupervisedModel(Model):
           labels=tf.zeros_like(neg_logits), logits=neg_logits)
       loss = tf.reduce_sum(true_xent) + tf.reduce_sum(negative_xent)
     else:
-      neg_cost = tf.reduce_logsumexp(neg_logits, axis=2)
-      loss = tf.reduce_sum(logits - neg_cost)
+      neg_cost = tf.reduce_logsumexp(neg_logits, axis=2, keepdims=True)
+      loss = -tf.reduce_sum(logits - neg_cost)
     return loss, mrr
 
   def call(self, inputs):
@@ -160,9 +160,8 @@ class UnsupervisedModelV2(Model):
           labels=tf.zeros_like(neg_logits), logits=neg_logits)
       loss = tf.reduce_sum(true_xent) + tf.reduce_sum(negative_xent)
     else:
-      neg_cost = tf.reduce_logsumexp(neg_logits, axis=2)
-      loss = tf.reduce_sum(logits - neg_cost)
-    loss = loss / tf.to_float(tf.size(logits))
+      neg_cost = tf.reduce_logsumexp(neg_logits, axis=2, keepdims=True)
+      loss = -tf.reduce_sum(logits - neg_cost)
     return loss, mrr
 
   def call(self, inputs):

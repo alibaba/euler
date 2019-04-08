@@ -27,10 +27,10 @@ namespace common {
 template<class T>
 class FastWeightedCollection : public WeightedCollection<T> {
  public:
-  void Init(const std::vector<T>& ids,
+  bool Init(const std::vector<T>& ids,
             const std::vector<float>& weights) override;
 
-  void Init(const std::vector<std::pair<T, float>>& id_weight_pairs) override;
+  bool Init(const std::vector<std::pair<T, float>>& id_weight_pairs) override;
 
   std::pair<T, float> Sample() const override;
 
@@ -48,10 +48,10 @@ class FastWeightedCollection : public WeightedCollection<T> {
 };
 
 template<class T>
-void FastWeightedCollection<T>::Init(const std::vector<T>& ids,
+bool FastWeightedCollection<T>::Init(const std::vector<T>& ids,
                                      const std::vector<float>& weights) {
   if (ids.size() != weights.size()) {
-    return;
+    return false;
   }
   ids_.resize(ids.size());
   weights_.resize(weights.size());
@@ -66,11 +66,11 @@ void FastWeightedCollection<T>::Init(const std::vector<T>& ids,
     norm_weights[i] /= sum_weight_;
   }
   alias_.Init(norm_weights);
-  return;
+  return true;
 }
 
 template<class T>
-void FastWeightedCollection<T>::Init(
+bool FastWeightedCollection<T>::Init(
     const std::vector<std::pair<T, float>>& id_weight_pairs) {
   ids_.resize(id_weight_pairs.size());
   weights_.resize(id_weight_pairs.size());
@@ -85,7 +85,7 @@ void FastWeightedCollection<T>::Init(
     norm_weights[i] /= sum_weight_;
   }
   alias_.Init(norm_weights);
-  return;
+  return true;
 }
 
 template<class T>

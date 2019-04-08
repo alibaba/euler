@@ -58,10 +58,10 @@ class CompactWeightedCollection : public WeightedCollection<T> {
   CompactWeightedCollection() {
   }
 
-  void Init(const std::vector<T>& ids,
+  bool Init(const std::vector<T>& ids,
             const std::vector<float>& weights) override;
 
-  void Init(const std::vector<std::pair<T, float>>& id_weight_pairs) override;
+  bool Init(const std::vector<std::pair<T, float>>& id_weight_pairs) override;
 
   std::pair<T, float> Sample() const override;
 
@@ -78,7 +78,7 @@ class CompactWeightedCollection : public WeightedCollection<T> {
 };
 
 template<class T>
-void CompactWeightedCollection<T>::Init(const std::vector<T>& ids,
+bool CompactWeightedCollection<T>::Init(const std::vector<T>& ids,
                                         const std::vector<float>& weights) {
   if (ids.size() == weights.size()) {
     sum_weight_ = 0.0;
@@ -89,13 +89,15 @@ void CompactWeightedCollection<T>::Init(const std::vector<T>& ids,
       sum_weight_ += weights[i];
       sum_weights_[i] = sum_weight_;
     }
+    return true;
   } else {
     LOG(ERROR) << "ids size != weights size, init error";
+    return false;
   }
 }
 
 template<class T>
-void CompactWeightedCollection<T>::Init(
+bool CompactWeightedCollection<T>::Init(
     const std::vector<std::pair<T, float>>& id_weight_pairs) {
   sum_weight_ = 0.0;
   ids_.resize(id_weight_pairs.size());
@@ -105,6 +107,7 @@ void CompactWeightedCollection<T>::Init(
     sum_weight_ += id_weight_pairs[i].second;
     sum_weights_[i] = sum_weight_;
   }
+  return true;
 }
 
 template<class T>

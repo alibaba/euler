@@ -281,7 +281,7 @@ bool CompactNode::DeSerialize(const char* s, size_t size) {
 
   int32_t edge_group_num = 0;
   if (!bytes_reader.GetInt32(&edge_group_num)) {
-    LOG(ERROR) << "edge group num error";
+    LOG(ERROR) << "edge group num error, node_id: " << id_;
     return false;
   }
 
@@ -293,20 +293,22 @@ bool CompactNode::DeSerialize(const char* s, size_t size) {
   std::vector<int32_t> edge_group_size_list;
   if (!bytes_reader.GetInt32List(edge_group_num,
                                  &edge_group_size_list)) {
-    LOG(ERROR) << "edge group size list error";
+    LOG(ERROR) << "edge group size list error, node_id: " << id_;
     return false;
   }
 
   std::vector<float> edge_group_weight_list;
   if (!bytes_reader.GetFloatList(edge_group_num,
                                  &edge_group_weight_list)) {
-    LOG(ERROR) << "edge group weight list error";
+    LOG(ERROR) << "edge group weight list error, node_id: " << id_;
     return false;
   }
 
   // build edge_group_collection_
-  edge_group_collection_.Init(edge_group_ids, edge_group_weight_list);
-
+  if (!edge_group_collection_.Init(edge_group_ids, edge_group_weight_list)) {
+    LOG(ERROR) << "edge group collection error, node_id: " << id_;
+    return false;
+  }
   // build neighbors info
   int32_t total_neighbors_num = 0;
   std::vector<std::vector<uint64_t>> ids_list(edge_group_num);
@@ -317,7 +319,7 @@ bool CompactNode::DeSerialize(const char* s, size_t size) {
     ids_list[i] = std::vector<uint64_t>();
     if (!bytes_reader.GetUInt64List(edge_group_size_list[i],
                                     &ids_list[i])) {
-      LOG(ERROR) << "neighbor id list error";
+      LOG(ERROR) << "neighbor id list error, node_id: " << id_;
       return false;
     }
   }
@@ -327,7 +329,7 @@ bool CompactNode::DeSerialize(const char* s, size_t size) {
     weights_list[i] = std::vector<float>();
     if (!bytes_reader.GetFloatList(edge_group_size_list[i],
                                    &weights_list[i])) {
-      LOG(ERROR) << "neighbor weight list error";
+      LOG(ERROR) << "neighbor weight list error, node_id: " << id_;
       return false;
     }
   }
@@ -356,16 +358,15 @@ bool CompactNode::DeSerialize(const char* s, size_t size) {
       neighbors_weight_.push_back(sum_weight);
     }
   }
-
   // parse uint64 feature
   int32_t uint64_feature_type_num = 0;
   if (!bytes_reader.GetInt32(&uint64_feature_type_num)) {
-    LOG(ERROR) << "uint64 feature type num error";
+    LOG(ERROR) << "uint64 feature type num error, node_id: " << id_;
     return false;
   }
   if (!bytes_reader.GetInt32List(uint64_feature_type_num,
                                  &uint64_features_idx_)) {
-    LOG(ERROR) << "uint64 feature idx list error";
+    LOG(ERROR) << "uint64 feature idx list error, node_id: " << id_;
     return false;
   }
   int32_t uint64_fv_num = 0;
@@ -374,19 +375,19 @@ bool CompactNode::DeSerialize(const char* s, size_t size) {
     uint64_features_idx_[i] = uint64_fv_num;
   }
   if (!bytes_reader.GetUInt64List(uint64_fv_num, &uint64_features_)) {
-    LOG(ERROR) << "uint64 feature value list error";
+    LOG(ERROR) << "uint64 feature value list error, node_id: " << id_;
     return false;
   }
 
   // parse float feature
   int32_t float_feature_type_num = 0;
   if (!bytes_reader.GetInt32(&float_feature_type_num)) {
-    LOG(ERROR) << "float feature type num error";
+    LOG(ERROR) << "float feature type num error, node_id: " << id_;
     return false;
   }
   if (!bytes_reader.GetInt32List(float_feature_type_num,
                                  &float_features_idx_)) {
-    LOG(ERROR) << "float feature idx list error";
+    LOG(ERROR) << "float feature idx list error, node_id: " << id_;
     return false;
   }
   int32_t float_fv_num = 0;
@@ -395,19 +396,19 @@ bool CompactNode::DeSerialize(const char* s, size_t size) {
     float_features_idx_[i] = float_fv_num;
   }
   if (!bytes_reader.GetFloatList(float_fv_num, &float_features_)) {
-    LOG(ERROR) << "float feature value list error";
+    LOG(ERROR) << "float feature value list error, node_id: " << id_;
     return false;
   }
 
   // parse binary feature
   int32_t binary_feature_type_num = 0;
   if (!bytes_reader.GetInt32(&binary_feature_type_num)) {
-    LOG(ERROR) << "binary feature type num error";
+    LOG(ERROR) << "binary feature type num error, node_id: " << id_;
     return false;
   }
   if (!bytes_reader.GetInt32List(binary_feature_type_num,
                                  &binary_features_idx_)) {
-    LOG(ERROR) << "binary feature idx list error";
+    LOG(ERROR) << "binary feature idx list error, node_id: " << id_;
     return false;
   }
   int32_t binary_fv_num = 0;
@@ -416,10 +417,9 @@ bool CompactNode::DeSerialize(const char* s, size_t size) {
     binary_features_idx_[i] = binary_fv_num;
   }
   if (!bytes_reader.GetString(binary_fv_num, &binary_features_)) {
-    LOG(ERROR) << "binary feature value list error";
+    LOG(ERROR) << "binary feature value list error, node_id: " << id_;
     return false;
   }
-
   return true;
 }
 

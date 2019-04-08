@@ -58,7 +58,7 @@ class BaseAggregator(layers.Layer):
     else:
       return tf.add(from_self, from_neighs)
 
-  def aggregate(self):
+  def aggregate(self, inputs):
     raise NotImplementedError()
 
 

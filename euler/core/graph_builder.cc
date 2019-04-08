@@ -17,6 +17,7 @@ limitations under the License.
 
 #include <stddef.h>
 #include <stdint.h>
+#include <stdlib.h>
 
 #include <algorithm>
 #include <vector>
@@ -26,14 +27,14 @@ limitations under the License.
 
 #include "euler/common/bytes_reader.h"
 
-#define THREAD_NUM 100
-
 namespace euler {
 namespace core {
 
 bool GraphBuilder::LoadData(LoaderType loader_type,
                             const std::vector<std::string>& file_list,
-                            Graph* graph, std::string addr, int32_t port) {
+                            Graph* graph, std::string addr, int32_t port,
+                            NODEVEC &np, EDGEVEC &ep,
+                            int32_t& n_type_num, int32_t& e_type_num) {
   for (size_t i = 0; i < file_list.size(); ++i) {
     euler::common::FileIO* reader = nullptr;
     euler::common::FileIO::ConfigMap config;
@@ -70,7 +71,7 @@ bool GraphBuilder::LoadData(LoaderType loader_type,
     }
     int32_t block_size = 0;
     while (reader->Read(&block_size)) {
-      if (!ParseBlock(reader, graph, block_size)) {
+      if (!ParseBlock(reader, graph, block_size, np, ep, n_type_num, e_type_num)) {
         LOG(ERROR) << file_list[i] << " data error!";
         return false;
       }
@@ -87,10 +88,17 @@ Graph* GraphBuilder::BuildGraph(const std::vector<std::string>& file_names,
                                 LoaderType loader_type, std::string addr,
                                 int32_t port,
                                 GlobalSamplerType global_sampler_type) {
+  int THREAD_NUM = std::thread::hardware_concurrency();
   Graph* graph = factory_->CreateGraph();
   bool load_success = true;
   std::vector<std::thread> thread_list;
   int p_num = file_names.size() / THREAD_NUM + 1;
+  NODEVEC tmp_node_vec[THREAD_NUM];
+  EDGEVEC tmp_edge_vec[THREAD_NUM];
+  int32_t n_type_num[THREAD_NUM];
+  int32_t e_type_num[THREAD_NUM];
+  memset(n_type_num, 0, sizeof(n_type_num));
+  memset(e_type_num, 0, sizeof(e_type_num));
   for (int i = 0; i < THREAD_NUM; ++i) {
     std::vector<std::string> file_list;
     int j = i * p_num;
@@ -99,20 +107,45 @@ Graph* GraphBuilder::BuildGraph(const std::vector<std::string>& file_names,
       file_list.push_back(file_names[j]);
     }
 
-    // LOG(INFO) << "Thread " << i <<  ", job size: " << file_list.size();
+    //LOG(INFO) << "Thread " << i <<  ", job size: " << file_list.size();
     thread_list.push_back(std::thread(
-        [this, loader_type, file_list, graph, addr, port] (bool* success) {
-          *success = *success && LoadData(loader_type, file_list, graph, addr, port);
+        [this, loader_type, file_list, graph, addr, port,i, &tmp_node_vec, &tmp_edge_vec,
+        &n_type_num, &e_type_num] (bool* success) {
+          *success = *success && LoadData(loader_type, file_list, graph, addr, port, tmp_node_vec[i],
+                                          tmp_edge_vec[i], n_type_num[i], e_type_num[i]);
         }, &load_success));
   }
-  for (size_t i = 0; i < THREAD_NUM; ++i) {
+  for (int i = 0; i < THREAD_NUM; ++i) {
     thread_list[i].join();
   }
+
+  int64_t node_size = 0, edge_size = 0;
+  for(int i = 0 ; i < THREAD_NUM ; i++) {
+    node_size += tmp_node_vec[i].size();
+    edge_size += tmp_edge_vec[i].size();
+  }
+  LOG(INFO) << "Each Thread Load Finish! Node Count:" << node_size<< " Edge Count:"<< edge_size;
+
 
   if (!load_success) {
     LOG(ERROR) << "Graph build failed!";
     return nullptr;
   }
+  else {
+    LOG(INFO) << "Graph Loading Finish!";
+  }
+
+  for(int i = 0 ; i < THREAD_NUM ; i++) {
+    graph->AddNodeFrom(tmp_node_vec[i]);
+    tmp_node_vec[i].clear();
+    graph->AddEdgeFrom(tmp_edge_vec[i]);
+    tmp_edge_vec[i].clear();
+    graph->SetNodeTypeNum(n_type_num[i]);
+    graph->SetEdgeTypeNum(e_type_num[i]);
+  }
+
+    LOG(INFO) << "Graph Load Finish! Node Count:" << graph->getNodeSize()<< " Edge Count:"
+        << graph->getEdgeSize();
 
   if (global_sampler_type == node) {
     graph->BuildGlobalSampler();
@@ -131,7 +164,8 @@ Graph* GraphBuilder::BuildGraph(const std::vector<std::string>& file_names,
 }
 
 bool GraphBuilder::ParseBlock(euler::common::FileIO* file_io, Graph* graph,
-                              int32_t checksum) {
+                              int32_t checksum, NODEVEC &np, EDGEVEC &ep,
+                              int32_t& n_type_num, int32_t& e_type_num) {
   int32_t node_info_bytes = 0;
   std::string node_info;
   if (!file_io->Read(&node_info_bytes)) {
@@ -147,8 +181,9 @@ bool GraphBuilder::ParseBlock(euler::common::FileIO* file_io, Graph* graph,
     return false;
   }
 
-  graph->AddNode(node);
-  graph->SetNodeTypeNum(node->GetType() + 1);
+  np.push_back(node);
+  int tmp = node->GetType() + 1;
+  n_type_num = tmp > n_type_num ? tmp: n_type_num;
 
   int32_t edges_num = 0;
   if (!file_io->Read(&edges_num)) {
@@ -169,8 +204,9 @@ bool GraphBuilder::ParseBlock(euler::common::FileIO* file_io, Graph* graph,
     if (!edge->DeSerialize(edge_info)) {
       return false;
     }
-    graph->AddEdge(edge);
-    graph->SetEdgeTypeNum(edge->GetType() + 1);
+    ep.push_back(edge);
+    int tmp_e = edge->GetType() + 1;
+    e_type_num = tmp_e > e_type_num ? tmp_e: e_type_num;
   }
   int32_t total_edges_info_bytes = 0;
   for (size_t i = 0; i < edges_info_bytes.size(); ++i) {

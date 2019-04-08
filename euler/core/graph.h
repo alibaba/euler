@@ -36,6 +36,8 @@ namespace core {
 class Graph {
  public:
   Graph() {
+    node_map_.reserve(10000000);
+    edge_map_.reserve(10000000);
     node_type_num_ = 0;
     edge_type_num_ = 0;
     global_sampler_ok_ = false;
@@ -90,6 +92,22 @@ class Graph {
     return true;
   }
 
+  virtual bool AddNodeFrom(const std::unordered_map<euler::common::NodeID, Node*>& map) {
+    node_map_insert_lock_.lock();
+    node_map_.insert(map.begin(), map.end());
+    node_map_insert_lock_.unlock();
+    return true;
+  }
+
+  virtual bool AddNodeFrom(const std::vector<Node*>& vec) {
+    node_map_insert_lock_.lock();
+    for(auto &it:vec){
+       node_map_.insert({it->GetID(), it});
+    }
+    node_map_insert_lock_.unlock();
+    return true;
+  }
+
   virtual bool AddEdge(Edge* e) {
     euler::common::EdgeID edge_id = e->GetID();
     edge_map_insert_lock_.lock();
@@ -98,6 +116,38 @@ class Graph {
     return true;
   }
 
+  virtual bool AddEdgeFrom(const std::unordered_map<euler::common::EdgeID, Edge*,
+                            euler::common::EdgeIDHashFunc, euler::common::EdgeIDEqualKey>& map) {
+    edge_map_insert_lock_.lock();
+    edge_map_.insert(map.begin(), map.end());
+    edge_map_insert_lock_.unlock();
+    return true;
+  }
+
+  virtual bool AddEdgeFrom(const std::vector<Edge*>& vec) {
+    edge_map_insert_lock_.lock();
+    for(auto &it:vec){
+      edge_map_.insert({it->GetID(),it});
+    }
+    edge_map_insert_lock_.unlock();
+    return true;
+  }
+
+  int64_t getNodeSize() {
+      return node_map_.size();
+  }
+
+  int64_t getEdgeSize() {
+      return edge_map_.size();
+  }
+
+  void reserveNodeMap(size_t size) {
+    node_map_.reserve(size);
+  }
+
+  void reserveEdgeMap(size_t size){
+    edge_map_.reserve(size);
+  }
   virtual bool BuildGlobalSampler() = 0;
 
   virtual bool BuildGlobalEdgeSampler() = 0;

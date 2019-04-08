@@ -34,6 +34,12 @@ namespace core {
 enum LoaderType {local, hdfs};
 enum GlobalSamplerType {edge, node, all, none};
 
+typedef std::unordered_map<euler::common::NodeID, Node*> NODEMAP;
+typedef std::vector<Node*> NODEVEC;
+
+typedef std::unordered_map<euler::common::EdgeID, Edge*,
+        euler::common::EdgeIDHashFunc, euler::common::EdgeIDEqualKey> EDGEMAP;
+typedef std::vector<Edge*> EDGEVEC;
 class GraphBuilder {
  public:
   explicit GraphBuilder(GraphFactory* factory) : factory_(factory) {}
@@ -46,12 +52,14 @@ class GraphBuilder {
       GlobalSamplerType global_sampler_type);
 
  private:
-  bool ParseBlock(euler::common::FileIO* file_io, Graph* graph, int32_t checksum);
+  bool ParseBlock(euler::common::FileIO* file_io, Graph* graph, int32_t checksum,
+                  NODEVEC &np, EDGEVEC &ep, int32_t& n_type_num, int32_t& e_type_num);
 
   bool LoadData(
       LoaderType loader_type,
       const std::vector<std::string>& file_list,
-      Graph* graph, std::string addr, int32_t port);
+      Graph* graph, std::string addr, int32_t port,NODEVEC &np, EDGEVEC &ep,
+      int32_t& n_type_num, int32_t& e_type_num);
 
  private:
   std::unique_ptr<GraphFactory> factory_;

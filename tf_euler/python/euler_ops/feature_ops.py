@@ -47,7 +47,7 @@ def _get_sparse_feature(nodes_or_edges, feature_ids, op, thread_num,
   return [tf.sparse_concat(axis=0, sp_inputs=sp,
       expand_nonconcat_dim=True) for sp in split_sp_transpose]
 
-def get_sparse_feature(nodes, feature_ids, thread_num=1, default_values=None):
+def get_sparse_feature(nodes, feature_ids, default_values=None, thread_num=1):
   """
   Fetch sparse features of nodes.
 
@@ -65,7 +65,7 @@ def get_sparse_feature(nodes, feature_ids, thread_num=1, default_values=None):
                              base._LIB_OP.get_sparse_feature, thread_num)
 
 
-def get_edge_sparse_feature(edges, feature_ids, thread_num=1, default_values=None):
+def get_edge_sparse_feature(edges, feature_ids, default_values=None, thread_num=1):
   """
   Args:
     edges: A 2-D `Tensor` of `int64`, with shape `[num_edges, 3]`.

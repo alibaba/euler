@@ -31,6 +31,7 @@ class LsHNE(base.UnsupervisedModel):
   def __init__(self, node_type, path_patterns, max_id, dim,
           sparse_feature_dims, feature_ids,feature_embedding_dim=16,
           walk_len=3, left_win_size=1, right_win_size=1, num_negs=5, gamma=5,
+          src_type_num=20,
           *args, **kwargs):
     super(LsHNE, self).__init__(node_type, path_patterns, max_id,
               *args, **kwargs)
@@ -43,10 +44,11 @@ class LsHNE(base.UnsupervisedModel):
     self.right_win_size = right_win_size
     self.num_negs = num_negs
     self.view_num = len(path_patterns)
+    self.src_type_num = src_type_num
     if self.view_num<1:
-      raise ValueError('View Number must be bigger than 1, got{}'.format(self.view_num))
+      raise ValueError('View Number must be bigger than or equal 1, got{}'.format(self.view_num))
     if not isinstance(sparse_feature_dims, list):
-      raise TypeError('Expect list for sparse feature dimsgot {}.'.format(
+      raise TypeError('Expect list for sparse feature dims, got {}.'.format(
           type(sparse_feature_dims).__name__))
     self.sparse_feature_dims = sparse_feature_dims
     self.feature_ids = feature_ids
@@ -57,14 +59,22 @@ class LsHNE(base.UnsupervisedModel):
       self.feature_embedding_layer.append(layers.SparseEmbedding(d,feature_embedding_dim,
           combiner="sum"))
 
-    self.hidden_layer =[{}] * self.view_num
+    self.hidden_layer =[{} for i in range(self.view_num)]
     for i in range(0, self.view_num):
-        self.hidden_layer[i]['src'] = layers.Dense(256)
-        self.hidden_layer[i]['tar'] = layers.Dense(256)
-    self.out_layer = [{}] * self.view_num
+        self.hidden_layer[i]['src'] = []
+        self.hidden_layer[i]['tar'] = []
+        for j in range(0,self.src_type_num):
+            self.hidden_layer[i]['src'].append(layers.Dense(256))
+            if i == 0:
+                self.hidden_layer[i]['tar'].append(layers.Dense(256))
+    self.out_layer = [{} for i in range(self.view_num)]
     for i in range(0, self.view_num):
-        self.out_layer[i]['src'] = layers.Dense(self.dim)
-        self.out_layer[i]['tar'] = layers.Dense(self.dim)
+        self.out_layer[i]['src'] = []
+        self.out_layer[i]['tar'] = []
+        for j in range(0,self.src_type_num):
+            self.out_layer[i]['src'].append(layers.Dense(self.dim))
+            if i == 0:
+                self.out_layer[i]['tar'].append(layers.Dense(self.dim))
 
     self.att_vec = tf.get_variable(
             'att_vec',
@@ -102,17 +112,29 @@ class LsHNE(base.UnsupervisedModel):
 
   def source_encoder(self, inputs, view):
     raw_emb = self.feature_embedding_lookup(inputs)
-    embedding = self.id_dnn_net(raw_emb, 'src', view)
+    node_type = euler_ops.get_node_type(inputs)
+    embedding = self.id_dnn_net(raw_emb, 'src', view, node_type)
     return embedding
 
   def context_encoder(self, inputs, view):
     raw_emb = self.feature_embedding_lookup(inputs)
-    embedding = self.id_dnn_net(raw_emb, 'tar', view)
+    node_type = euler_ops.get_node_type(inputs)
+    embedding = self.id_dnn_net(raw_emb, 'tar', view, node_type)
     return embedding
 
-  def id_dnn_net(self, inputs, name, view):
-    hidden = self.hidden_layer[view][name](inputs)
-    out = self.out_layer[view][name](hidden)
+  def id_dnn_net(self, inputs, name, view, node_type=None):
+    if name == 'tar':
+        view = 0
+    node_type_vec = tf.reshape(tf.one_hot(node_type, self.src_type_num)
+            ,[-1, self.src_type_num, 1])
+    hiddens = [tf.expand_dims(layer(inputs), 1)
+            for layer in self.hidden_layer[view][name]]
+    hiddens = [tf.reshape(hidden, [-1, 256])
+            for hidden in hiddens]
+    out = tf.concat([tf.expand_dims(self.out_layer[view][name][i](hiddens[i]), 1)
+            for i in range(self.src_type_num)], 1)
+    out = tf.matmul(out, node_type_vec, transpose_a=True)
+    out = tf.reshape(out,[-1, self.dim])
     return out
 
   def decoder(self, embedding, embedding_pos, embedding_negs):
@@ -170,6 +192,8 @@ class LsHNE(base.UnsupervisedModel):
 
     loss = tf.reduce_sum(single_view_loss)+tf.reduce_sum(multi_view_loss)
     mrr = tf.reduce_mean(mrr_view)
+    embedding = self.get_att_embedding(None, inputs, -1)
+    embedding.set_shape([None, self.dim])
     return ModelOutput(
         embedding=embedding, loss=loss, metric_name='mrr', metric=mrr)
 

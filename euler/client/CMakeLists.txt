@@ -11,7 +11,7 @@ add_library(client SHARED
             rpc_client.cc
             rpc_manager.cc
             status.cc)
-target_link_libraries(client common core proto glog)
+target_link_libraries(client common core proto glog jemalloc_STATIC_PIC)
 
 add_executable(graph_test graph_test.cc)
 target_link_libraries(graph_test client

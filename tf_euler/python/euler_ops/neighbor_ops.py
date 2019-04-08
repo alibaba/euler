@@ -120,9 +120,10 @@ def get_multi_hop_neighbor(nodes, edge_types):
     next_nodes, next_idx = tf.unique(neighbor.values, out_idx=tf.int64)
     next_indices = tf.stack([neighbor.indices[:, 0], next_idx], 1)
     next_values = weight.values
-    next_shape = [tf.size(nodes), tf.size(next_nodes)]
-    next_adj = tf.sparse.SparseTensor(next_indices, next_values, next_shape)
-    next_adj = tf.sparse.reorder(next_adj)
+    next_shape = tf.stack([tf.size(nodes), tf.size(next_nodes)])
+    next_shape = tf.cast(next_shape, tf.int64)
+    next_adj = tf.SparseTensor(next_indices, next_values, next_shape)
+    next_adj = tf.sparse_reorder(next_adj)
     nodes_list.append(next_nodes)
     adj_list.append(next_adj)
     nodes = next_nodes
