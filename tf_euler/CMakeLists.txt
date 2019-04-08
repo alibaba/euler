@@ -50,7 +50,7 @@ add_library(tf_euler SHARED
 
             utils/create_graph.cc)
 
-target_link_libraries(tf_euler client common ${TF_FRAMEWORK})
+target_link_libraries(tf_euler client common ${TF_FRAMEWORK} jemalloc_STATIC_PIC)
 target_include_directories(tf_euler BEFORE PRIVATE ${TF_INC_DIR}
                            "${TF_INC_DIR}/external/nsync/public/")
 

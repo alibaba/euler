@@ -59,7 +59,7 @@ class FeatureOpsTest(test.TestCase):
 
   def testGetNodeSparseFeature(self):
     """Test get sparse feature for nodes"""
-    op = ops.get_sparse_feature(tf.constant([1, 2, 3, 4], dtype=tf.int64), [0, 1], 2)
+    op = ops.get_sparse_feature(tf.constant([1, 2, 3, 4], dtype=tf.int64), [0, 1], None, 2)
     with tf.Session() as sess:
       sparse_features = sess.run(op)
       features = [

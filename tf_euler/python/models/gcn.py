@@ -23,13 +23,21 @@ from tf_euler.python import encoders
 from tf_euler.python.models import base
 
 
-class GCN(base.SupervisedModel):
+class SupervisedGCN(base.SupervisedModel):
+
   def __init__(self, label_idx, label_dim, metapath, dim, aggregator='mean',
-               feature_idx=-1, feature_dim=0, use_residual=False,
+               feature_idx=-1, feature_dim=0, max_id=-1, use_id=False,
+               sparse_feature_idx=-1, sparse_feature_max_id=-1,
+               embedding_dim=16, use_hash_embedding=False, use_residual=False,
                *args, **kwargs):
-    super(GCN, self).__init__(label_idx, label_dim, *args, **kwargs)
+    super(SupervisedGCN, self).__init__(label_idx, label_dim, *args, **kwargs)
     self._encoder = encoders.GCNEncoder(
-        metapath, dim, aggregator, feature_idx, feature_dim,
+        metapath, dim, aggregator,
+        feature_idx=feature_idx, feature_dim=feature_dim,
+        max_id=max_id, use_id=use_id,
+        sparse_feature_idx=sparse_feature_idx,
+        sparse_feature_max_id=sparse_feature_max_id,
+        embedding_dim=embedding_dim, use_hash_embedding=use_hash_embedding,
         use_residual=use_residual)
 
   def encoder(self, inputs):
@@ -37,15 +45,22 @@ class GCN(base.SupervisedModel):
 
 
 class ScalableGCN(base.SupervisedModel):
+
   def __init__(self, label_idx, label_dim, edge_type, num_layers, dim,
-               aggregator='mean', feature_idx=-1, feature_dim=0, max_id=-1,
-               use_residual=False,
+               aggregator='mean', feature_idx=-1, feature_dim=0,
+               max_id=-1, use_id=False,
+               sparse_feature_idx=-1, sparse_feature_max_id=-1,
+               embedding_dim=16, use_hash_embedding=False, use_residual=False,
                store_learning_rate=0.001, store_init_maxval=0.05,
                *args, **kwargs):
     super(ScalableGCN, self).__init__(label_idx, label_dim, *args, **kwargs)
     self._encoder = encoders.ScalableGCNEncoder(
-        edge_type, num_layers, dim,
-        aggregator, feature_idx, feature_dim, max_id,
+        edge_type, num_layers, dim, aggregator,
+        feature_idx=feature_idx, feature_dim=feature_dim,
+        max_id=max_id, use_id=use_id,
+        sparse_feature_idx=sparse_feature_idx,
+        sparse_feature_max_id=sparse_feature_max_id,
+        embedding_dim=embedding_dim, use_hash_embedding=use_hash_embedding,
         use_residual=use_residual,
         store_learning_rate=store_learning_rate,
         store_init_maxval=store_init_maxval)
@@ -63,6 +78,7 @@ class ScalableGCN(base.SupervisedModel):
 
 
 class _ScalableGCNHook(tf.train.SessionRunHook):
+
   def __init__(self, scalable_sage_encoder, loss):
     self._scalable_gcn_encoder = scalable_sage_encoder
     self._loss = loss

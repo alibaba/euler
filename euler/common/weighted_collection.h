@@ -28,9 +28,9 @@ template <class T>
 class WeightedCollection {
  public:
   virtual ~WeightedCollection() {}
-  virtual void Init(const std::vector<T>& ids,
+  virtual bool Init(const std::vector<T>& ids,
                     const std::vector<float>& weights) = 0;
-  virtual void Init(
+  virtual bool Init(
       const std::vector<std::pair<T, float> >& id_weight_pairs) = 0;
   virtual std::pair<T, float> Sample() const = 0;
   virtual size_t GetSize() const = 0;

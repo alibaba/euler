@@ -110,7 +110,7 @@ class LasGNN(base.Model):
             shared_aggregators=shared_aggregators)
         for metapath in metapaths_of_group
     ] for metapaths_of_group in metapaths_of_groups]
-    self._attention_of_group = [Attention() for _ in metapaths_of_group]
+    self._attention_of_group = [Attention() for _ in metapaths_of_groups]
     self._target_feed_forward = layers.Dense(dim)
     self._context_feed_forward = layers.Dense(dim)
 

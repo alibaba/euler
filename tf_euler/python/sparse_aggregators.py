@@ -28,6 +28,12 @@ def _sparse_ones_like(sp_tensor):
                            sp_tensor.dense_shape)
 
 
+def _sparse_eye(num_rows, dtype=tf.float32):
+  return tf.SparseTensor(
+      tf.stack([tf.range(num_rows)] * 2, axis=1),
+      tf.ones(num_rows, dtype), tf.stack([num_rows] * 2))
+
+
 class GCNAggregator(layers.Layer):
 
   def __init__(self, dim, activation=tf.nn.relu, renorm=False, **kwargs):
@@ -39,8 +45,8 @@ class GCNAggregator(layers.Layer):
     self_embedding, neigh_embedding, adj = inputs
     adj = _sparse_ones_like(adj)
 
-    degree = tf.reshape(tf.sparse.reduce_sum(adj, 1), [-1, 1])
-    agg_embedding = tf.sparse.matmul(adj, neigh_embedding)
+    degree = tf.reshape(tf.sparse_reduce_sum(adj, 1), [-1, 1])
+    agg_embedding = tf.sparse_tensor_dense_matmul(adj, neigh_embedding)
     if self.renorm:
       agg_embedding = (self_embedding + agg_embedding) / (1. + degree)
     else:
@@ -62,8 +68,8 @@ class MeanAggregator(layers.Layer):
     self_embedding, neigh_embedding, adj = inputs
     adj = _sparse_ones_like(adj)
 
-    degree = tf.reshape(tf.sparse.reduce_sum(adj, 1), [-1, 1])
-    agg_embedding = tf.sparse.matmul(adj, neigh_embedding) / \
+    degree = tf.reshape(tf.sparse_reduce_sum(adj, 1), [-1, 1])
+    agg_embedding = tf.sparse_tensor_dense_matmul(adj, neigh_embedding) / \
                     tf.maximum(degree, 1e-7)
 
     from_self = self.self_layer(self_embedding)
@@ -88,8 +94,8 @@ class SingleAttentionAggregator(layers.Layer):
     self_embedding, neigh_embedding, adj = inputs
     adj = _sparse_ones_like(adj)
     if self.renorm:
-      eye = tf.sparse.eye(adj.dense_shape[0])
-      adj = tf.sparse.concat(1, [eye, adj])
+      eye = _sparse_eye(adj.dense_shape[0])
+      adj = tf.sparse_concat(1, [eye, adj])
 
     if not self.renorm:
       from_all = self.dense(neigh_embedding)
@@ -101,14 +107,14 @@ class SingleAttentionAggregator(layers.Layer):
 
     self_weight = self.self_layer(from_self)
     all_weight = self.neigh_layer(from_all)
-    coefficient = tf.sparse.add(adj * self_weight,
+    coefficient = tf.sparse_add(adj * self_weight,
                                 adj * tf.reshape(all_weight, [1, -1]))
     coefficient = tf.SparseTensor(
         coefficient.indices, tf.nn.leaky_relu(coefficient.values),
         coefficient.dense_shape)
-    coefficient = tf.sparse.softmax(coefficient)
+    coefficient = tf.sparse_softmax(coefficient)
 
-    output = tf.sparse.matmul(coefficient, from_all)
+    output = tf.sparse_tensor_dense_matmul(coefficient, from_all)
     if not self.renorm:
       output = from_self + output
     if self.activation:
@@ -118,10 +124,11 @@ class SingleAttentionAggregator(layers.Layer):
 
 class AttentionAggregator(layers.Layer):
 
-  def __init__(self, dim, num_heads=4, activation=tf.nn.relu, **kwargs):
+  def __init__(self, dim, num_heads=4, activation=tf.nn.relu, renorm=False,
+               **kwargs):
     super(AttentionAggregator, self).__init__(**kwargs)
     dim //= num_heads
-    self.attentions = [SingleAttentionAggregator(dim, activation)
+    self.attentions = [SingleAttentionAggregator(dim, activation, renorm)
                        for _ in range(num_heads)]
 
   def call(self, inputs):

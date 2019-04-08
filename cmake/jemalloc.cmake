@@ -24,15 +24,15 @@ ExternalProject_Add(jemalloc
 ExternalProject_Get_Property(jemalloc INSTALL_DIR)
 
 add_library(jemalloc_STATIC STATIC IMPORTED)
-set_property(TARGET jemalloc_STATIC PROPERTY IMPORTED_LOCATION ${INSTALL_DIR}/lib/libjemallloc.a)
+set_property(TARGET jemalloc_STATIC PROPERTY IMPORTED_LOCATION ${INSTALL_DIR}/src/jemalloc/lib/libjemalloc.a)
 add_dependencies(jemalloc_STATIC jemalloc)
 
 add_library(jemalloc_STATIC_PIC STATIC IMPORTED)
-set_property(TARGET jemalloc_STATIC_PIC PROPERTY IMPORTED_LOCATION ${INSTALL_DIR}/lib/libjemallloc_pic.a)
+set_property(TARGET jemalloc_STATIC_PIC PROPERTY IMPORTED_LOCATION ${INSTALL_DIR}/src/jemalloc/lib/libjemalloc_pic.a)
 add_dependencies(jemalloc_STATIC_PIC jemalloc)
 
 add_library(jemalloc_SHARED SHARED IMPORTED)
-set_property(TARGET jemalloc_SHARED PROPERTY IMPORTED_LOCATION ${INSTALL_DIR}/lib/libjemallloc.so)
+set_property(TARGET jemalloc_SHARED PROPERTY IMPORTED_LOCATION ${INSTALL_DIR}/src/jemalloc/lib/libjemalloc.so)
 add_dependencies(jemalloc_SHARED jemalloc)
 
 if (!APPLE)

@@ -39,7 +39,7 @@ class bdist_wheel(_bdist_wheel):
 
 
 setuptools.setup(name='euler-gl',
-                 version='0.1.0',
+                 version='0.1.2',
                  description='A toolset for network representation learning.',
                  url='https://github.com/alibaba/euler',
                  author='Alibaba Group Holding Limited',

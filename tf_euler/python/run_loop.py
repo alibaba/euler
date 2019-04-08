@@ -42,7 +42,7 @@ def define_network_embedding_flags():
   tf.flags.DEFINE_integer('all_node_type', euler_ops.ALL_NODE_TYPE,
                           'Node type of the whole graph.')
   tf.flags.DEFINE_list('train_edge_type', [0], 'Edge type of training set.')
-  tf.flags.DEFINE_list('all_edge_type', [0, 1],
+  tf.flags.DEFINE_list('all_edge_type', [0, 1, 2],
                        'Edge type of the whole graph.')
   tf.flags.DEFINE_integer('max_id', -1, 'Max node id.')
   tf.flags.DEFINE_integer('feature_idx', -1, 'Feature index.')
@@ -58,11 +58,11 @@ def define_network_embedding_flags():
   tf.flags.DEFINE_integer('dim', 256, 'Dimension of embedding.')
   tf.flags.DEFINE_integer('num_negs', 5, 'Number of negative samplings.')
   tf.flags.DEFINE_integer('order', 1, 'LINE order.')
-  tf.flags.DEFINE_integer('walk_len', 3, 'Length of random walk path.')
+  tf.flags.DEFINE_integer('walk_len', 5, 'Length of random walk path.')
   tf.flags.DEFINE_float('walk_p', 1., 'Node2Vec return parameter.')
   tf.flags.DEFINE_float('walk_q', 1., 'Node2Vec in-out parameter.')
-  tf.flags.DEFINE_integer('left_win_size', 1, 'Left window size.')
-  tf.flags.DEFINE_integer('right_win_size', 1, 'Right window size.')
+  tf.flags.DEFINE_integer('left_win_size', 5, 'Left window size.')
+  tf.flags.DEFINE_integer('right_win_size', 5, 'Right window size.')
   tf.flags.DEFINE_list('fanouts', [10, 10], 'GCN fanouts.')
   tf.flags.DEFINE_enum('aggregator', 'mean',
                        ['gcn', 'mean', 'meanpool', 'maxpool', 'attention'],
@@ -106,7 +106,7 @@ def run_train(model, flags_obj, master, is_chief):
   _, loss, metric_name, metric = model(source)
 
   optimizer_class = optimizers.get(flags_obj.optimizer)
-  optimizer = optimizer_class(learning_rate=flags_obj.learning_rate)
+  optimizer = optimizer_class(flags_obj.learning_rate)
   global_step = tf.train.get_or_create_global_step()
   train_op = optimizer.minimize(loss, global_step=global_step)
 
@@ -117,7 +117,8 @@ def run_train(model, flags_obj, master, is_chief):
       tf.train.LoggingTensorHook(
           tensor_to_log, every_n_iter=flags_obj.log_steps))
 
-  num_steps = int((flags_obj.max_id + 1) // batch_size * flags_obj.num_epochs)
+  num_steps = int((flags_obj.max_id + 1) // flags_obj.batch_size *
+                   flags_obj.num_epochs)
   hooks.append(tf.train.StopAtStepHook(last_step=num_steps))
 
   if len(flags_obj.worker_hosts) == 0 or flags_obj.task_index == 1:
@@ -205,7 +206,7 @@ def run_network_embedding(flags_obj, master, is_chief):
         num_negs=flags_obj.num_negs,
         order=flags_obj.order)
 
-  elif flags_obj.model == 'randomwalk':
+  elif flags_obj.model in ['randomwalk', 'deepwalk', 'node2vec']:
     model = models.Node2Vec(
         node_type=flags_obj.all_node_type,
         edge_type=flags_obj.all_edge_type,
@@ -219,8 +220,8 @@ def run_network_embedding(flags_obj, master, is_chief):
         left_win_size=flags_obj.left_win_size,
         right_win_size=flags_obj.right_win_size)
 
-  elif flags_obj.model == 'gcn':
-    model = models.GCN(
+  elif flags_obj.model in ['gcn', 'gcn_supervised']:
+    model = models.SupervisedGCN(
         label_idx=flags_obj.label_idx,
         label_dim=flags_obj.label_dim,
         num_classes=flags_obj.num_classes,
@@ -304,7 +305,7 @@ def run_network_embedding(flags_obj, master, is_chief):
         nb_num=5)
 
   elif flags_obj.model == 'lshne':
-    model = models.LsHNE(-1,[[0,0,0],[0,0,0]],-1,128,[1,1],[1,1])
+    model = models.LsHNE(-1,[[[0,0,0],[0,0,0]]],-1,128,[1,1],[1,1])
 
   elif flags_obj.model == 'saved_embedding':
     embedding_val = np.load(os.path.join(flags_obj.model_dir, 'embedding.npy'))
