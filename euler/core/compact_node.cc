@@ -73,7 +73,7 @@ CompactNode::SampleNeighbor(
       }
       int32_t pre_idx = edge_type == 0 ? 0 :
                         neighbor_groups_idx_[edge_type - 1];
-      int32_t cur_idx = neighbor_groups_idx_[edge_type] - 1;
+      int32_t cur_idx = neighbor_groups_idx_[edge_type];
       if (cur_idx <= pre_idx) {
         return empty_vec;
       }
