@@ -117,7 +117,7 @@ def run_train(model, flags_obj, master, is_chief):
       tf.train.LoggingTensorHook(
           tensor_to_log, every_n_iter=flags_obj.log_steps))
 
-  num_steps = int((flags_obj.max_id + 1) // flags_obj.batch_size *
+  num_steps = int((flags_obj.max_id + 1) // batch_size *
                    flags_obj.num_epochs)
   hooks.append(tf.train.StopAtStepHook(last_step=num_steps))
 
