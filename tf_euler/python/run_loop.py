@@ -140,10 +140,12 @@ def run_train(model, flags_obj, master, is_chief):
       sess.run(train_op)
 
 
-def run_evaluate(model, flags_obj):
+def run_evaluate(model, flags_obj, master, is_chief):
   utils_context.training = False
 
   dataset = tf.data.TextLineDataset(flags_obj.id_file)
+  if master:
+    dataset = dataset.shard(len(flags_obj.worker_hosts), flags_obj.task_index)
   dataset = dataset.map(
       lambda id_str: tf.string_to_number(id_str, out_type=tf.int64))
   dataset = dataset.batch(flags_obj.batch_size)
@@ -151,11 +153,15 @@ def run_evaluate(model, flags_obj):
   _, _, metric_name, metric = model(source)
 
   tf.train.get_or_create_global_step()
+  hooks = [utils_hooks.SyncExitHook(len(flags_obj.worker_hosts))]
 
   with tf.train.MonitoredTrainingSession(
+      master=master,
+      is_chief=is_chief,
       checkpoint_dir=flags_obj.model_dir,
       save_checkpoint_secs=None,
       log_step_count_steps=None,
+      hooks=hooks,
       config=config) as sess:
     while not sess.should_stop():
       metric_val = sess.run(metric)
@@ -163,30 +169,50 @@ def run_evaluate(model, flags_obj):
   print('{}: {}'.format(metric_name, metric_val))
 
 
-def run_save_embedding(model, flags_obj):
+def run_save_embedding(model, flags_obj, master, is_chief):
   utils_context.training = False
 
   dataset = tf.data.Dataset.range(flags_obj.max_id + 1)
+  if master:
+    dataset = dataset.shard(len(flags_obj.worker_hosts), flags_obj.task_index)
   dataset = dataset.batch(flags_obj.batch_size)
   source = dataset.make_one_shot_iterator().get_next()
   embedding, _, _, _ = model(source)
 
   tf.train.get_or_create_global_step()
+  hooks = [utils_hooks.SyncExitHook(len(flags_obj.worker_hosts))]
 
+  ids = []
   embedding_vals = []
   with tf.train.MonitoredTrainingSession(
+      master=master,
+      is_chief=is_chief,
       checkpoint_dir=flags_obj.model_dir,
       save_checkpoint_secs=None,
       log_step_count_steps=None,
+      hooks=hooks,
       config=config) as sess:
     while not sess.should_stop():
-      embedding_val = sess.run(embedding)
+      id_, embedding_val = sess.run([source, embedding])
+      ids.append(id_)
       embedding_vals.append(embedding_val)
 
+  id_ = np.concatenate(ids)
   embedding_val = np.concatenate(embedding_vals)
-  np.save(os.path.join(flags_obj.model_dir, 'embedding.npy'), embedding_val)
-  with open(os.path.join(flags_obj.model_dir, 'id.txt'), 'w') as fp:
-    fp.write('\n'.join(map(str, range(flags_obj.max_id + 1))))
+
+  if master:
+    embedding_filename = 'embedding_{}.npy'.format(flags_obj.task_index)
+    id_filename = 'id_{}.txt'.format(flags_obj.task_index)
+  else:
+    embedding_filename = 'embedding.npy'
+    id_filename = 'id.txt'
+  embedding_filename = flags_obj.model_dir + '/' + embedding_filename
+  id_filename = flags_obj.model_dir + '/' + id_filename
+
+  with tf.gfile.GFile(embedding_filename, 'w') as embedding_file:
+    np.save(embedding_file, embedding_val)
+  with tf.gfile.GFile(id_filename, 'w') as id_file:
+    id_file.write('\n'.join(map(str, id_)))
 
 
 def run_network_embedding(flags_obj, master, is_chief):
@@ -326,9 +352,9 @@ def run_network_embedding(flags_obj, master, is_chief):
   if flags_obj.mode == 'train':
     run_train(model, flags_obj, master, is_chief)
   elif flags_obj.mode == 'evaluate':
-    run_evaluate(model, flags_obj)
+    run_evaluate(model, flags_obj, master, is_chief)
   elif flags_obj.mode == 'save_embedding':
-    run_save_embedding(model, flags_obj)
+    run_save_embedding(model, flags_obj, master, is_chief)
 
 
 def run_local(flags_obj, run):
