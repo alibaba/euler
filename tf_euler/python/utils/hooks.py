@@ -25,7 +25,8 @@ import tensorflow as tf
 class SyncExitHook(tf.train.SessionRunHook):
   def __init__(self, num_workers):
     self._num_workers = num_workers
-    self._num_finished_workers = tf.Variable(0, name="num_finished_workers")
+    self._num_finished_workers = tf.Variable(
+        0, name="num_finished_workers", collections=[tf.GraphKeys.LOCAL_VARIABLES])
     self._finish_self = tf.assign_add(
         self._num_finished_workers, 1, use_locking=True)
 
