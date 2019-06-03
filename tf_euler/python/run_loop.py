@@ -153,7 +153,9 @@ def run_evaluate(model, flags_obj, master, is_chief):
   _, _, metric_name, metric = model(source)
 
   tf.train.get_or_create_global_step()
-  hooks = [utils_hooks.SyncExitHook(len(flags_obj.worker_hosts))]
+  hooks = []
+  if master:
+    hooks.append(utils_hooks.SyncExitHook(len(flags_obj.worker_hosts)))
 
   with tf.train.MonitoredTrainingSession(
       master=master,
@@ -180,7 +182,9 @@ def run_save_embedding(model, flags_obj, master, is_chief):
   embedding, _, _, _ = model(source)
 
   tf.train.get_or_create_global_step()
-  hooks = [utils_hooks.SyncExitHook(len(flags_obj.worker_hosts))]
+  hooks = []
+  if master:
+    hooks.append(utils_hooks.SyncExitHook(len(flags_obj.worker_hosts)))
 
   ids = []
   embedding_vals = []
