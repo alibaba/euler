@@ -1,44 +1,44 @@
-# 概述
-图是表达能力很强的通用数据结构，可以用来刻画现实世界中的很多问题。图神经网络等基于图的学习方法在很多领域取得了非常好的效果。
+[中文版](https://github.com/alibaba/euler/wiki/HOME-CN)
 
-Euler是大规模分布式的图学习框架，配合TensorFlow或者阿里开源的XDL等深度学习工具，它支持用户在数十亿点数百亿边的复杂异构图上进行模型训练。有关Euler系统的详细介绍请参见[系统介绍](https://github.com/alibaba/euler/wiki/系统介绍)。
+# Overview
 
-# 使用文档
+Graph is a generic data structure with strong expressivity to characterize entities and their relationships in real world. Graph learning algorithms, such as graph neural networks (GNN), have been shown to be tremendously beneficial to many applications in both academia and industry.
 
-在基础教程中，我们着重介绍如何利用Euler快速上手。进阶应用中进一步介绍了如何编写一个定制化的模型以及分布式训练的知识。
+Euler is a large-scale distributed graph learning system. It can work with deep learning tools like TensorFlow or X-Deep Learning and support users to train models on very complex heterogeneous graphs with billions of nodes and tens of billions of edges. For a more detailed introduction to the Euler system, please refer to [System Introduction](https://github.com/alibaba/euler/wiki/System-Introduction).
 
-然后，我们介绍了Euler的编程接口：已有算法的高层使用接口，基于Tensorflow定义的中间层图操作算子，以及最底层的Euler C++ API(适合想适配其它深度学习框架的用户)。
+# Usage Documents
+In *Tutorials*, we guide users to get started quickly with Euler. Then, in *Advanced Usage*, we show how to write a customized model and how to achieve distributed training.
 
-在算法介绍章节，我们给出内部算法的介绍以及其它公开算法的论文链接。我们内部算法投稿结束后会给出更详细的论文文献。
+Next, we introduce Euler's *Programming Interfaces*: the ready-made model package based on TensorFlow which contains a bunch of state-of-the-art graph learning models, the graph operators to be used with TensorFlow, and the C++ API for the graph engine (for users who want to adapt to other deep learning frameworks).
 
-- 基础教程
-  - [编译安装](https://github.com/alibaba/euler/wiki/编译安装)
-  - [快速开始](https://github.com/alibaba/euler/wiki/快速开始)
-  - [数据准备](https://github.com/alibaba/euler/wiki/数据准备)
-  - [使用指南](https://github.com/alibaba/euler/wiki/使用指南)
-- 进阶应用
-  - [模型编写](https://github.com/alibaba/euler/wiki/模型编写)
-  - [集群使用](https://github.com/alibaba/euler/wiki/集群使用)
-- 详细接口
-  - [Euler OP (based on TensorFlow)](https://github.com/alibaba/euler/wiki/Euler-OP)
-  - [Euler Model Zoo (based on TensorFlow)](https://github.com/alibaba/euler/wiki/Euler-Model)
-  - [Euler C++ API](https://github.com/alibaba/euler/wiki/CPP接口)
-- 算法介绍  
+In *Model Introduction*, we give a brief introduction for our in-house algorithms and the links for other open-released models. In *Evaluation*, we provide effectiveness and efficiency evaluation of our system.
+
+- Tutorials
+  - [Installation](https://github.com/alibaba/euler/wiki/Installation)
+  - [Getting started](https://github.com/alibaba/euler/wiki/Getting-Started)
+  - [Preparing the data](https://github.com/alibaba/euler/wiki/Preparing-Data)
+  - [User manual](https://github.com/alibaba/euler/wiki/User-Manual)
+- Advanced Usage
+  - [Writing a model](https://github.com/alibaba/euler/wiki/Writing-Model)
+  - [Distributed training](https://github.com/alibaba/euler/wiki/Distributed-Training)
+- Programming Interfaces
+  - [Euler OP (based on TensorFlow)](https://github.com/alibaba/euler/wiki/Euler-OP-En)
+  - [Euler Model Zoo (based on TensorFlow)](https://github.com/alibaba/euler/wiki/Euler-Model-En)
+  - [Euler C++ API](https://github.com/alibaba/euler/wiki/CPP-API)
+- Model Introduction
   - [LsHNE](https://github.com/alibaba/euler/wiki/LsHNE)
   - [LasGNN](https://github.com/alibaba/euler/wiki/LasGNN)
   - [ScalableGCN](https://github.com/alibaba/euler/wiki/ScalableGCN)
-  - [论文列表](https://github.com/alibaba/euler/wiki/论文列表)
-- 测试结果 
-  - [效果测试](https://github.com/alibaba/euler/wiki/效果测试)
-  - [性能测试](https://github.com/alibaba/euler/wiki/性能测试)
+  - [Paper list](https://github.com/alibaba/euler/wiki/paper-list)
+- Evaluation
+  - [Effectiveness](https://github.com/alibaba/euler/wiki/Effectiveness)
+  - [Efficiency](https://github.com/alibaba/euler/wiki/Efficiency)
 
-# 联系我们
-如果有任何问题，请直接提交[issues](https://github.com/alibaba/euler/issues)，也欢迎通过Euler开源技术支持邮件组（[euler-opensource@list.alibaba-inc.com](mailto:euler-opensource@list.alibaba-inc.com)）联系我们。
+# Contact Us
+If you have any questions, please submit [issues](https://github.com/alibaba/euler/issues) or send mails to [euler-opensource@list.alibaba-inc.com](mailto:euler-opensource@list.alibaba-inc.com).
 
 # License
+Euler uses [Apache License 2.0](https://github.com/alibaba/euler/blob/master/LICENSE).
 
-Euler使用[Apache-2.0](https://github.com/alibaba/euler/blob/master/LICENSE)许可
-
-# 致谢
-
-Euler由阿里妈妈工程平台团队与搜索广告算法团队共同探讨与开发，也获得了阿里妈妈多个团队的大力支持。同时也特别感谢蚂蚁金服的机器学习团队，项目早期的一些技术交流给予我们的帮助。
+# Acknowledgement
+Euler is developed collaboratively by Alimama Engineering Platform Team and Alimama Search Advertising Algorithm Team. We are very grateful to the support of other teams in Alimama and to the Ant Financial Services Group's Machine Learning Team for their help in the early technical exchange stage of the project.
