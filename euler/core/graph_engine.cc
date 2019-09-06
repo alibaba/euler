@@ -173,7 +173,7 @@ std::vector<int32_t> GraphEngine::GetNodeType(
   STRUCT_TYPE* scout = nullptr;                                         \
   int32_t fv_num = 1;                                                   \
   for (size_t i = 0; i < IDS.size() && scout == nullptr; ++i) {         \
-    scout = graph_->GET_STRUCT_METHOD(IDS[0]);                          \
+    scout = graph_->GET_STRUCT_METHOD(IDS[i]);                          \
   }                                                                     \
   if (scout != nullptr) {                                               \
     fv_num = scout->GET_FV_NUM();                                       \
