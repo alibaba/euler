@@ -92,7 +92,7 @@ def sample_fanout(nodes, edge_types, counts, default_node=-1):
         neighbors_list[-1], hop_edge_types, count, default_node=default_node)
     neighbors_list.append(tf.reshape(neighbors, [-1]))
     weights_list.append(tf.reshape(weights, [-1]))
-    type_list.append(tf.reshape(weights, [-1]))
+    type_list.append(tf.reshape(types, [-1]))
   return neighbors_list, weights_list, type_list
 
 
