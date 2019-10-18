@@ -47,6 +47,9 @@ def define_network_embedding_flags():
   tf.flags.DEFINE_integer('max_id', -1, 'Max node id.')
   tf.flags.DEFINE_integer('feature_idx', -1, 'Feature index.')
   tf.flags.DEFINE_integer('feature_dim', 0, 'Feature dimension.')
+
+  tf.flags.DEFINE_list('sparse_feature_idx', [], 'Sparce Feature index.')
+  tf.flags.DEFINE_list('sparse_feature_max_id', [], 'Sparce Feature dimension.')
   tf.flags.DEFINE_integer('label_idx', -1, 'Label index.')
   tf.flags.DEFINE_integer('label_dim', 0, 'Label dimension.')
   tf.flags.DEFINE_integer('num_classes', None, 'Number of classes.')
@@ -140,12 +143,10 @@ def run_train(model, flags_obj, master, is_chief):
       sess.run(train_op)
 
 
-def run_evaluate(model, flags_obj, master, is_chief):
+def run_evaluate(model, flags_obj):
   utils_context.training = False
 
   dataset = tf.data.TextLineDataset(flags_obj.id_file)
-  if master:
-    dataset = dataset.shard(len(flags_obj.worker_hosts), flags_obj.task_index)
   dataset = dataset.map(
       lambda id_str: tf.string_to_number(id_str, out_type=tf.int64))
   dataset = dataset.batch(flags_obj.batch_size)
@@ -153,17 +154,11 @@ def run_evaluate(model, flags_obj, master, is_chief):
   _, _, metric_name, metric = model(source)
 
   tf.train.get_or_create_global_step()
-  hooks = []
-  if master:
-    hooks.append(utils_hooks.SyncExitHook(len(flags_obj.worker_hosts)))
 
   with tf.train.MonitoredTrainingSession(
-      master=master,
-      is_chief=is_chief,
       checkpoint_dir=flags_obj.model_dir,
       save_checkpoint_secs=None,
       log_step_count_steps=None,
-      hooks=hooks,
       config=config) as sess:
     while not sess.should_stop():
       metric_val = sess.run(metric)
@@ -171,52 +166,30 @@ def run_evaluate(model, flags_obj, master, is_chief):
   print('{}: {}'.format(metric_name, metric_val))
 
 
-def run_save_embedding(model, flags_obj, master, is_chief):
+def run_save_embedding(model, flags_obj):
   utils_context.training = False
 
   dataset = tf.data.Dataset.range(flags_obj.max_id + 1)
-  if master:
-    dataset = dataset.shard(len(flags_obj.worker_hosts), flags_obj.task_index)
   dataset = dataset.batch(flags_obj.batch_size)
   source = dataset.make_one_shot_iterator().get_next()
   embedding, _, _, _ = model(source)
 
   tf.train.get_or_create_global_step()
-  hooks = []
-  if master:
-    hooks.append(utils_hooks.SyncExitHook(len(flags_obj.worker_hosts)))
 
-  ids = []
   embedding_vals = []
   with tf.train.MonitoredTrainingSession(
-      master=master,
-      is_chief=is_chief,
       checkpoint_dir=flags_obj.model_dir,
       save_checkpoint_secs=None,
       log_step_count_steps=None,
-      hooks=hooks,
       config=config) as sess:
     while not sess.should_stop():
-      id_, embedding_val = sess.run([source, embedding])
-      ids.append(id_)
+      embedding_val = sess.run(embedding)
       embedding_vals.append(embedding_val)
 
-  id_ = np.concatenate(ids)
   embedding_val = np.concatenate(embedding_vals)
-
-  if master:
-    embedding_filename = 'embedding_{}.npy'.format(flags_obj.task_index)
-    id_filename = 'id_{}.txt'.format(flags_obj.task_index)
-  else:
-    embedding_filename = 'embedding.npy'
-    id_filename = 'id.txt'
-  embedding_filename = flags_obj.model_dir + '/' + embedding_filename
-  id_filename = flags_obj.model_dir + '/' + id_filename
-
-  with tf.gfile.GFile(embedding_filename, 'w') as embedding_file:
-    np.save(embedding_file, embedding_val)
-  with tf.gfile.GFile(id_filename, 'w') as id_file:
-    id_file.write('\n'.join(map(str, id_)))
+  np.save(os.path.join(flags_obj.model_dir, 'embedding.npy'), embedding_val)
+  with open(os.path.join(flags_obj.model_dir, 'id.txt'), 'w') as fp:
+    fp.write('\n'.join(map(str, range(flags_obj.max_id + 1))))
 
 
 def run_network_embedding(flags_obj, master, is_chief):
@@ -294,6 +267,26 @@ def run_network_embedding(flags_obj, master, is_chief):
         concat=flags_obj.concat,
         feature_idx=flags_obj.feature_idx,
         feature_dim=flags_obj.feature_dim)
+  elif flags_obj.model == 'sparse_graphsage':
+    sparse_feature_max_id = map(int, flags_obj.sparse_feature_max_id)
+    sparse_feature_idx = map(int, flags_obj.sparse_feature_idx)
+    print('sparse_feature_max_id',sparse_feature_max_id)
+    print('sparse_feature_idx',sparse_feature_idx)
+    model = models.GraphSage(
+        node_type=flags_obj.train_node_type,
+        edge_type=flags_obj.train_edge_type,
+        max_id=flags_obj.max_id,
+        xent_loss=flags_obj.xent_loss,
+        num_negs=flags_obj.num_negs,
+        metapath=metapath,
+        fanouts=fanouts,
+        dim=flags_obj.dim,
+        aggregator=flags_obj.aggregator,
+        concat=flags_obj.concat,
+        feature_idx=flags_obj.feature_idx,
+        feature_dim=flags_obj.feature_dim,
+        sparse_feature_max_id=sparse_feature_max_id,
+        sparse_feature_idx=sparse_feature_idx)
 
   elif flags_obj.model == 'graphsage_supervised':
     model = models.SupervisedGraphSage(
@@ -356,9 +349,9 @@ def run_network_embedding(flags_obj, master, is_chief):
   if flags_obj.mode == 'train':
     run_train(model, flags_obj, master, is_chief)
   elif flags_obj.mode == 'evaluate':
-    run_evaluate(model, flags_obj, master, is_chief)
+    run_evaluate(model, flags_obj)
   elif flags_obj.mode == 'save_embedding':
-    run_save_embedding(model, flags_obj, master, is_chief)
+    run_save_embedding(model, flags_obj)
 
 
 def run_local(flags_obj, run):
@@ -399,6 +392,20 @@ def run_distributed(flags_obj, run):
 
 def main(_):
   flags_obj = tf.flags.FLAGS
+  print('ljj flags_obj is ',type(flags_obj),str(flags_obj))
+  print('flags_obj.train_node_type',flags_obj.train_node_type)
+  print('flags_obj.train_edge_type',flags_obj.train_edge_type)
+  print('flags_obj.max_id',flags_obj.max_id)
+  print('flags_obj.xent_loss',flags_obj.xent_loss)
+  print('flags_obj.num_negs',flags_obj.num_negs)
+  print('flags_obj.dim',flags_obj.dim)
+  print('flags_obj.aggregator',flags_obj.aggregator)
+  print('flags_obj.concat',flags_obj.concat)
+  print('flags_obj.feature_idx',flags_obj.feature_idx)
+  print('flags_obj.feature_dim',flags_obj.feature_dim)
+  print('flags_obj.fanouts',flags_obj.fanouts)
+  print('flags_obj.sparse_feature_idx ',flags_obj.sparse_feature_idx)
+  print('flags_obj.sparse_feature_max_id ',flags_obj.sparse_feature_max_id)
   if flags_obj.worker_hosts:
     run_distributed(flags_obj, run_network_embedding)
   else:

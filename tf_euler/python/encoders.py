@@ -61,7 +61,7 @@ class ShallowEncoder(layers.Layer):
     if use_sparse_feature and \
        len(sparse_feature_idx) != len(sparse_feature_max_id):
       raise ValueError('sparse_feature_idx must be the same length as'
-                       'sparse_feature_max_id.')
+                       'sparse_feature_max_id.',len(sparse_feature_idx),len(sparse_feature_max_id),sparse_feature_idx,sparse_feature_max_id)
 
     embedding_num = (1 if use_id else 0) + \
                     (len(sparse_feature_idx) if use_sparse_feature else 0)
@@ -526,7 +526,7 @@ class SparseSageEncoder(SageEncoder):
   @staticmethod
   def create_sparse_embeddings(feature_dims):
     sparse_embeddings = [
-        layers.SparseEmbedding(feature_dim + 1, 16)
+        layers.SparseEmbedding(feature_dim, 16)
         for feature_dim in feature_dims
     ]
     return sparse_embeddings
@@ -537,11 +537,11 @@ class SparseSageEncoder(SageEncoder):
                **kwargs):
     super(SparseSageEncoder, self).__init__(
         metapath, fanouts, dim,
-        aggregator=aggregator, concat=concat,
         shared_aggregators=shared_aggregators,
-        use_feature=False, use_id=False)
-    self.feature_ixs = feature_ixs
-    self.feature_dims = feature_dims
+        use_feature=False, **kwargs)
+    print('ljj checking here',kwargs)
+    self.feature_ixs = kwargs['sparse_feature_idx']
+    self.feature_dims = kwargs['sparse_feature_max_id']
     self.dims[0] = 16 * len(feature_ixs)
 
     if shared_embeddings is not None:

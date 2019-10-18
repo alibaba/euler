@@ -55,6 +55,38 @@ class GraphSage(base.UnsupervisedModel):
   def context_encoder(self, inputs):
     return self._context_encoder(inputs)
 
+class SparseGraphSage(base.UnsupervisedModel):
+  def __init__(self, node_type, edge_type, max_id,
+               metapath, fanouts, dim, aggregator='mean', concat=False,
+               feature_idx=-1, feature_dim=0, use_feature=None, use_id=False,
+               sparse_feature_idx=-1, sparse_feature_max_id=-1,
+               embedding_dim=16, use_hash_embedding=False, use_residual=False,
+               *args, **kwargs):
+    super(GraphSage, self).__init__(
+        node_type, edge_type, max_id, *args, **kwargs)
+    self._target_encoder = encoders.SparseSageEncoder(
+        metapath=metapath, feature_ixs=sparse_feature_idx,feature_dims=sparse_feature_max_id,fanouts=fanouts, dim=dim, aggregator=aggregator, concat=concat,
+        feature_idx=feature_idx, feature_dim=feature_dim,
+        max_id=max_id, use_id=use_id,
+        sparse_feature_idx=sparse_feature_idx,
+        sparse_feature_max_id=sparse_feature_max_id,
+        embedding_dim=embedding_dim, use_hash_embedding=use_hash_embedding,
+        use_residual=use_residual)
+    self._context_encoder = encoders.SparseSageEncoder(
+        metapath=metapath, feature_ixs=sparse_feature_idx,feature_dims=sparse_feature_max_id, fanouts=fanouts, dim=dim, aggregator=aggregator, concat=concat,
+        feature_idx=feature_idx, feature_dim=feature_dim,
+        max_id=max_id, use_id=use_id,
+        sparse_feature_idx=sparse_feature_idx,
+        sparse_feature_max_id=sparse_feature_max_id,
+        embedding_dim=embedding_dim, use_hash_embedding=use_hash_embedding,
+        use_residual=use_residual)
+
+  def target_encoder(self, inputs):
+    return self._target_encoder(inputs)
+
+  def context_encoder(self, inputs):
+    return self._context_encoder(inputs)
+
 
 class SupervisedGraphSage(base.SupervisedModel):
   def __init__(self, label_idx, label_dim,
