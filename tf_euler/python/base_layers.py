@@ -133,6 +133,7 @@ class Embedding(Layer):
         'embeddings',
         shape=[self.max_id + 1, self.dim],
         initializer=self.initializer())
+    self.mask_padding_zero_op = tf.scatter_update(self.embeddings, 0, tf.zeros([self.dim]))
     self.built = True
 
   def call(self, inputs):
@@ -140,7 +141,8 @@ class Embedding(Layer):
     inputs = tf.reshape(inputs,[-1])
     output_shape = shape.concatenate(self.dim)
     output_shape = [d if d is not None else -1 for d in output_shape.as_list()]
-    return tf.reshape(tf.nn.embedding_lookup(self.embeddings, inputs),output_shape)
+    with tf.control_dependencies([self.mask_padding_zero_op]):
+        return tf.reshape(tf.nn.embedding_lookup(self.embeddings, inputs),output_shape)
 
 
 class SparseEmbedding(Embedding):
@@ -159,5 +161,6 @@ class SparseEmbedding(Embedding):
     self.combiner = combiner
 
   def call(self, inputs):
-    return tf.nn.embedding_lookup_sparse(self.embeddings, inputs, None,
+    with tf.control_dependencies([self.mask_padding_zero_op]):
+        return tf.nn.embedding_lookup_sparse(self.embeddings, inputs, None,
                                          combiner=self.combiner)
