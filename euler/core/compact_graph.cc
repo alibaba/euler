@@ -77,7 +77,6 @@ bool CompactGraph::BuildGlobalSampler() {
   std::vector<int32_t> node_type_ids;
   norm_weights.resize(node_type_num_);
   node_ids.resize(node_type_num_);
-  node_type_ids.resize(node_type_num_);
   node_weight_sums_.resize(node_type_num_);
   node_type_ids.resize(node_type_num_);
   for (auto &it : node_map_) {
