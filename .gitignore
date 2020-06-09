@@ -1,0 +1,9 @@
+*~
+*.so
+*.pyc
+build/
+build-new/
+*.pyc
+target
+.idea
+*.iml

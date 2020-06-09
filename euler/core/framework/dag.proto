@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package euler;
+
+option cc_enable_arenas = true;
+option java_outer_classname = "GraphProto";
+option java_multiple_files = true;
+option java_package = "com.alibaba.euler";
+option go_package = "github.com/alibaba/euler/euler/go/core/framework";
+
+import "euler/core/framework/dag_node.proto";
+
+message DAGProto {
+  bytes name = 1;
+  repeated DAGNodeProto nodes = 2;
+}

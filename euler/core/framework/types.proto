@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+package euler;
+
+option cc_enable_arenas = true;
+option java_outer_classname = "TypeProto";
+option java_multiple_files = true;
+option java_package = "com.alibaba.euler";
+option go_package = "github.com/alibaba/euler/euler/go/core/framework";
+
+enum DataTypeProto {
+  DT_INT8 = 0;
+  DT_INT16 = 1;
+  DT_INT32 = 2;
+  DT_INT64 = 3;
+
+  DT_UINT8 = 4;
+  DT_UINT16 = 5;
+  DT_UINT32 = 6;
+  DT_UINT64 = 7;
+
+  DT_FLOAT = 8;
+  DT_DOUBLE = 9;
+
+  DT_BOOL = 10;
+  DT_STRING = 11;
+}

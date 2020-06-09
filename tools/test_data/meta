@@ -1,0 +1,31 @@
+{
+  "node":
+  {
+    "type" : "node_type:int32_t:uint64_t:hash_index",
+    "features":{
+      "f4":
+      {
+        "1":"price:float:uint64_t:range_index"
+      },
+      "f3":
+      {
+        "0":"att:float:uint64_t:neighbor_index"
+      },
+      "graph_label": "graph_label:string:uint64_t:hash_index"
+    }
+  },
+  "edge":
+  {
+    "type" : "edge_type:int32_t:uint64_t:hash_index",
+    "features":{
+      "f3":
+      {
+        "0":"edge_value:float:uint64_t:range_index"
+      },
+      "f4":
+      {
+        "1":"edge_att:float:uint64_t:neighbor_index"
+      }
+    }
+  }
+}

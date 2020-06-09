@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+package euler;
+
+option cc_enable_arenas = true;
+option java_outer_classname = "NodeProto";
+option java_multiple_files = true;
+option java_package = "com.alibaba.euler";
+option go_package = "github.com/alibaba/euler/euler/go/core/framework";
+
+message DAGNodeProto {
+  string name = 1;  // "a,1" a is op name, 1 is node id
+  string op = 2;
+  repeated string inputs = 3;  // "a,1:0" a is op name, 1 is node id, 0 is output slot idx
+  repeated string dnf = 4;  // a eq b,c lt d
+  repeated string post_process = 5;  // "order_by p0 asc", "limit p1", "as p2"
+  string op_alias = 6;
+  int32 shard_idx = 7;  // remote node field
+  repeated DAGNodeProto inner_nodes = 8;  // remote node field
+  repeated string output_list = 9;  // like "a,1:0"
+  repeated string remote_output_list = 10;  // like "REMOTE,0:0"
+  int32 output_num = 11;
+  string udf_name = 12;
+  repeated string udf_str_params = 13;
+  repeated string udf_num_params = 14;
+}

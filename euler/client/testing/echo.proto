@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+package euler.testing;
+
+message EchoRequest {
+  string message = 1;
+}
+
+message EchoResponse {
+  string message = 1;
+}
+
+service EchoService {
+  rpc Echo(EchoRequest) returns (EchoResponse);
+}

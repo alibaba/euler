@@ -1,0 +1,4 @@
+lex.yy.c
+gremlin.tab.h
+gremlin.tab.c
+gremlin.output

@@ -1,0 +1,33 @@
+syntax = "proto3";
+
+package euler;
+
+option cc_enable_arenas = true;
+option java_outer_classname = "EulerServiceProto";
+option java_multiple_files = true;
+option java_package = "com.alibaba.euler";
+option go_package = "github.com/alibaba/euler/euler/go/proto";
+
+import "euler/proto/worker.proto";
+
+service EulerService {
+  rpc Ping(PingRequest) returns (PingReply) {}
+
+  // Euler 2.0 Gremlin executor service
+  rpc Execute (ExecuteRequest) returns (ExecuteReply) {}
+
+  // Euler 1.0 service
+  rpc SampleNode (SampleNodeRequest) returns (SampleNodeReply) {}
+  rpc SampleEdge (SampleEdgeRequest) returns (SampleEdgeReply) {}
+  rpc GetNodeType (GetNodeTypeRequest) returns (GetNodeTypeReply) {}
+  rpc GetNodeFloat32Feature (GetNodeFloat32FeatureRequest) returns (GetFloat32FeatureReply) {}
+  rpc GetNodeUInt64Feature (GetNodeUInt64FeatureRequest) returns (GetUInt64FeatureReply) {}
+  rpc GetNodeBinaryFeature (GetNodeBinaryFeatureRequest) returns (GetBinaryFeatureReply) {}
+  rpc GetEdgeFloat32Feature (GetEdgeFloat32FeatureRequest) returns (GetFloat32FeatureReply) {}
+  rpc GetEdgeUInt64Feature (GetEdgeUInt64FeatureRequest) returns (GetUInt64FeatureReply) {}
+  rpc GetEdgeBinaryFeature (GetEdgeBinaryFeatureRequest) returns (GetBinaryFeatureReply) {}
+  rpc GetFullNeighbor (GetFullNeighborRequest) returns (GetNeighborReply) {}
+  rpc GetSortedNeighbor (GetSortedNeighborRequest) returns (GetNeighborReply) {}
+  rpc GetTopKNeighbor (GetTopKNeighborRequest) returns (GetNeighborReply) {}
+  rpc SampleNeighbor (SampleNeighborRequest) returns (GetNeighborReply) {}
+}

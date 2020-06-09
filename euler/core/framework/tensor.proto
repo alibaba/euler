@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package euler;
+
+option cc_enable_arenas = true;
+option java_outer_classname = "TensorProto";
+option java_multiple_files = true;
+option java_package = "com.alibaba.euler";
+option go_package = "github.com/alibaba/euler/euler/go/core/framework";
+
+import "euler/core/framework/types.proto";
+import "euler/core/framework/tensor_shape.proto";
+
+message TensorProto {
+  DataTypeProto dtype = 1;
+  TensorShapeProto tensor_shape = 2;
+  string name = 3;  // tensor name, for op output fetch and feed
+  bytes tensor_content = 4;
+}
