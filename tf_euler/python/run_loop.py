@@ -28,6 +28,7 @@ from tf_euler.python import models
 from tf_euler.python import optimizers
 from tf_euler.python.utils import context as utils_context
 from tf_euler.python.utils import hooks as utils_hooks
+from tf_euler.python.utils import embedding as utils_embedding
 from euler.python import service
 
 config = tf.ConfigProto()
@@ -90,6 +91,9 @@ def define_network_embedding_flags():
                          'Euler ZK registration service.')
   tf.flags.DEFINE_string('euler_zk_path', '/tf_euler',
                          'Euler ZK registration node.')
+
+  tf.flags.DEFINE_integer('incremental_emb_size', 1024,
+                          'Incremental embedding saved batch size')
 
 
 def run_train(model, flags_obj, master, is_chief):
@@ -197,26 +201,39 @@ def run_save_embedding(model, flags_obj, master, is_chief):
       hooks=hooks,
       config=config) as sess:
     while not sess.should_stop():
-      id_, embedding_val = sess.run([source, embedding])
+
+      try:
+        id_, embedding_val = sess.run([source, embedding])
+      except tf.errors.OutOfRangeError as e:
+        break
+
       ids.append(id_)
       embedding_vals.append(embedding_val)
 
-  id_ = np.concatenate(ids)
-  embedding_val = np.concatenate(embedding_vals)
+      shard_index = 0
+      if len(ids) == flags_obj.incremental_emb_size:
 
-  if master:
-    embedding_filename = 'embedding_{}.npy'.format(flags_obj.task_index)
-    id_filename = 'id_{}.txt'.format(flags_obj.task_index)
-  else:
-    embedding_filename = 'embedding.npy'
-    id_filename = 'id.txt'
-  embedding_filename = flags_obj.model_dir + '/' + embedding_filename
-  id_filename = flags_obj.model_dir + '/' + id_filename
+        utils_embedding.embedding_save(master,
+                                       ids,
+                                       embedding_vals,
+                                       flags_obj.task_index,
+                                       shard_index,
+                                       flags_obj.model_dir)
+        ids = []
+        embedding_vals = []
+        shard_index = shard_index + 1
 
-  with tf.gfile.GFile(embedding_filename, 'w') as embedding_file:
-    np.save(embedding_file, embedding_val)
-  with tf.gfile.GFile(id_filename, 'w') as id_file:
-    id_file.write('\n'.join(map(str, id_)))
+    utils_embedding.embedding_save(master,
+                                   ids,
+                                   embedding_vals,
+                                   flags_obj.task_index,
+                                   shard_index,
+                                   flags_obj.model_dir)
+
+
+
+
+
 
 
 def run_network_embedding(flags_obj, master, is_chief):

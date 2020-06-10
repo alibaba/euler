@@ -17,8 +17,10 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import numpy as np
 import tensorflow as tf
 from tensorflow.python.ops import variables
+
 
 
 def embedding_update(params,
@@ -66,3 +68,28 @@ def embedding_add(params,
   return embedding_update(params, ids, values,
                           partition_strategy=partition_strategy,
                           func=tf.scatter_add, name=name)
+
+def embedding_save(master,
+                   ids,
+                   embedding_vals,
+                   task_index,
+                   shard_index,
+                   model_dir):
+
+    id_ = np.concatenate(ids)
+    embedding_val = np.concatenate(embedding_vals)
+
+    if master:
+      embedding_filename = 'embedding_{}_{}.npy'.format(task_index, shard_index)
+      id_filename = 'id_{}_{}.txt'.format(task_index, shard_index)
+    else:
+      embedding_filename = 'embedding_{}.npy'.format(shard_index)
+      id_filename = 'id_{}.txt'.format(shard_index)
+
+    embedding_filename = model_dir + '/' + embedding_filename
+    id_filename = model_dir + '/' + id_filename
+
+    with tf.gfile.GFile(embedding_filename, 'w') as embedding_file:
+      np.save(embedding_file, embedding_val)
+    with tf.gfile.GFile(id_filename, 'w') as id_file:
+      id_file.write('\n'.join(map(str, id_)))
