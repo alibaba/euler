@@ -21,7 +21,7 @@ limitations under the License.
 
 namespace euler {
 
-bool SimpleCondtition(TreeNode* t) {
+bool SimpleCondition(TreeNode* t) {
   std::vector<TreeNode*> children = t->GetChildren();
   std::string op = children[0]->GetValue();
   std::string p = children[1]->GetValue();

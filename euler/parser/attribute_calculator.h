@@ -20,7 +20,7 @@ limitations under the License.
 
 namespace euler {
 
-bool SimpleCondtition(TreeNode* t);
+bool SimpleCondition(TreeNode* t);
 bool HasKey(TreeNode* t);
 bool HasLabel(TreeNode* t);
 bool Has(TreeNode* t);
