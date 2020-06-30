@@ -30,7 +30,7 @@ namespace euler {
 class Translator {
  public:
   explicit Translator(OptimizerType type) : env_type_(type) {
-    func_map_["SIMPLE_CONDITION"] = SimpleCondtition;
+    func_map_["SIMPLE_CONDITION"] = SimpleCondition;
     func_map_["HAS_KEY"] = HasKey;
     func_map_["HAS_LABEL"] = HasLabel;
     func_map_["HAS"] = Has;
