@@ -32,7 +32,7 @@ assert (major <= 1) and (minor <= 11), "networkx major version > 1.11"
 
 def load_data(prefix, normalize=True, load_walks=False):
     def obj2int(n):
-        return n
+        return int(n)
 
     def just_return(n):
         return n
