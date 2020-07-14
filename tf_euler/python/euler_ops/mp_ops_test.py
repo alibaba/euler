@@ -47,9 +47,11 @@ class ScatterTest(tf.test.TestCase):
         x = tf.constant([[1., 2.], [3., 4.], [5., 6.]])
         idx = tf.constant([1, 0, 1])
         out = mp_ops.scatter_mean(x, idx, size=2)
-
+        exp = tf.constant([[3., 4.], [3., 4.]])
+        diff = tf.reduce_sum(tf.abs(out - exp))
         with self.test_session():
-            self.assertAllEqual([[3., 4.], [3., 4.]], out.eval())
+            # self.assertAllEqual([[3., 4.], [3., 4.]], out.eval())
+            self.assertLess(diff.eval(), 1e-6)
 
     def testScatterMeanGrad(self):
         x = tf.constant([[1., 2.], [3., 4.], [5., 6.]])

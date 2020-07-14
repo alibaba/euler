@@ -43,15 +43,6 @@ class NeighborOpsTest(test.TestCase):
             'data_type': 'all'
         })
 
-    def testGetBatchAdj(self):
-        op = ops.get_batch_adj([1, 2, 3, 4, 5, 6,
-                                1, 2, 3, 4, -1, -1],
-                               ["0", "1"], 2, 6, 0)
-        with tf.Session() as sess:
-            sparse_adj = sess.run(op)
-            adj = sess.run(tf.sparse_tensor_to_dense(sparse_adj))
-            print(adj)
-
     def testGetFullNeighbor(self):
         """Test get full neighbors for nodes"""
 
@@ -212,8 +203,8 @@ class NeighborOpsTest(test.TestCase):
     def testSampleFanoutWithFeature(self):
         """test sample fanout with feature"""
 
-        dense_feature_names = ["dense_f3", "dense_f4"]
-        sparse_feature_names = ["sparse_f1", "sparse_f2"]
+        dense_feature_names = ["f3", "f4"]
+        sparse_feature_names = ["f1", "f2"]
         fanout = [['0', '1'], ['0', '1']]
         op = ops.sample_fanout_with_feature(
             tf.constant([1, 2, 0, 3], dtype=tf.int64),
