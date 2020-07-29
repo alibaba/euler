@@ -117,11 +117,12 @@ class Converter(object):
                                         edge_json['weight'],
                                         edge_type,
                                         self.gmeta.edge_type_count)
-        self.nodes[edge_json['dst']].set_in_neighbor(
-            src_id,
-            edge_json['weight'],
-            edge_type,
-            self.gmeta.edge_type_count)
+        # no use in neighbor
+        #self.nodes[edge_json['dst']].set_in_neighbor(
+        #    src_id,
+        #    edge_json['weight'],
+        #    edge_type,
+        #    self.gmeta.edge_type_count)
 
         edge = Edge(edge_json['src'],
                     edge_json['dst'],
