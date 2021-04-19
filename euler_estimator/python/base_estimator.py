@@ -166,7 +166,7 @@ class BaseEstimator(object):
             worker_idx = 0
         out_idxs = []
         out_embeddings = []
-        for output in estimator.predict(input_fn=self.evaluate_input_fn):
+        for output in estimator.predict(input_fn=self.infer_input_fn):
             out_idxs.append(output['idx'])
             out_embeddings.append(output['embedding'])
         out_embeddings = np.asarray(out_embeddings)
