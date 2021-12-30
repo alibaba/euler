@@ -14,7 +14,6 @@ Params:
 | Parameter Name | Default | Note |
 | ----------------- | -------------- | ------------------------------- |
 | dataset           | wn18           | wn18/fb15/fb15-237/
-       |
 | hidden_dim        | 32             | hidden dimension                |
 | embedding_dim     | 32             | node embedding dimension        |
 | num_negs          | 5              | negative sample  number         |
