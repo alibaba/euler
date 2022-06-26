@@ -1,2 +1,0 @@
-add_executable(remote_console remote_console.cc)
-target_link_libraries(remote_console euler_core)
