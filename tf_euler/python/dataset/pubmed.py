@@ -58,7 +58,26 @@ class pubmed(DataSet):
         DataSet.download_file(source_url, pubmed_tgz_dir)
         with tarfile.open(pubmed_tgz_dir) as pubmed_file:
             print('unzip data..')
-            pubmed_file.extractall(out_dir)
+            def is_within_directory(directory, target):
+                
+                abs_directory = os.path.abspath(directory)
+                abs_target = os.path.abspath(target)
+            
+                prefix = os.path.commonprefix([abs_directory, abs_target])
+                
+                return prefix == abs_directory
+            
+            def safe_extract(tar, path=".", members=None, *, numeric_owner=False):
+            
+                for member in tar.getmembers():
+                    member_path = os.path.join(path, member.name)
+                    if not is_within_directory(path, member_path):
+                        raise Exception("Attempted Path Traversal in Tar File")
+            
+                tar.extractall(path, members, numeric_owner=numeric_owner) 
+                
+            
+            safe_extract(pubmed_file, out_dir)
 
     def convert2json(self, convert_dir, out_dir):
         def add_node(id, type, weight, label, feature):
