@@ -25,7 +25,7 @@ from absl import app
 from absl import flags
 
 FLAGS = flags.FLAGS
-flags.DEFINE_string("embedding_file", None, "Embedings of nodes")
+flags.DEFINE_string("embedding_file", None, "Embeddings of nodes")
 flags.DEFINE_string("id_file", None, "Ids of nodes")
 flags.DEFINE_string("query_file", None, "Query vectors")
 flags.DEFINE_string("index_type", None, "faiss index type")
